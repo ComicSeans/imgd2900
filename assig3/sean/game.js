@@ -31,6 +31,8 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
  *  Mod 3)
  *		The background lights up from black to white as the player lights up the board.
  *  Mod 4)
+ *  	The edge of the grid glows more as the gird lights up black to white.
+ *  Mod 5)
  *  	The toy plays 'ta-da!' if the entire grid is lit up white.
  */
 
@@ -147,6 +149,8 @@ PS.touch = function( x, y, data, options ) {
 	//Adjust the background color of the screen for how lit up the grid is
 	var colorVal = numWhite() * 3.984375;
 	PS.gridColor(colorVal, colorVal, colorVal);
+	var shadowVal = clamp(colorVal + 50, 0, 255);
+	PS.gridShadow(true, shadowVal, shadowVal, shadowVal);
 
 	//play ta-da if the whole screen is lit up
 	if(numWhite() == 8*8)

@@ -1,3 +1,15 @@
+/* 	Name: Stone Cleven
+	Team: Zahlen
+	Mods: 	-Grid size is now 16x16
+			-Clicks now make cross shape
+			-Shape now fades in over 0.5 seconds
+			-Shape color from click is now randomized
+			-Clicks now play "fx_coin1" sound
+			-Status line now reads "Stone's Modded Toy"
+			-Grid shadow is now activated and violet
+			-Grid color is now black
+*/
+
 // game.js for Perlenspiel 3.1
 
 /*
@@ -43,9 +55,22 @@ PS.init = function( system, options ) {
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
 
-	PS.gridSize( 8, 8 );
+	PS.gridSize( 16, 16 );
+//	PS.gridColor( 0x303030 ); // Perlenspiel gray
 
-	PS.statusText("Hello world!");
+	PS.gridColor( PS.COLOR_BLACK ) ;
+
+	PS.gridShadow (true, PS.COLOR_VIOLET) ;
+	//PS.borderColor ( PS.ALL , PS.ALL , PS.COLOR_BLACK)
+
+	PS.bgColor ( PS.ALL , PS.ALL , PS.COLOR_BLACK );
+
+	PS.statusColor( PS.COLOR_WHITE );
+	PS.statusText( "Stone's Modded Toy" );
+
+	PS.fade( PS.ALL, PS.ALL, 30 );
+
+	PS.audioLoad( "fx_coin1", { lock: true } ); // load & lock click sound
 
 	// Add any other initialization code you need here
 };
@@ -60,15 +85,43 @@ PS.init = function( system, options ) {
 
 PS.touch = function( x, y, data, options ) {
 	"use strict";
-
-	PS.color( x, y, PS.COLOR_RED );
-
-	PS.audioPlay( "fx_click" );
+	// var next;
 
 	// Uncomment the following line to inspect parameters
-	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
+	// Change color of touched bed
+	// The default [data] is 0, which equals PS.COLOR_BLACK
 
+	/*PS.color( x, y, data ); // set color
+	if ( data === PS.COLOR_BLACK ) {
+		next = PS.COLOR_WHITE;
+	}
+
+	else { next = PS.COLOR_BLACK;
+	}
+
+	PS.data( x, y, next ); // remember color
+
+	 */
+
+	var r, g, b;
+
+	r = PS.random( 256 ) - 1;
+	g = PS.random( 256 ) - 1;
+	b = PS.random( 256 ) - 1;
+
+	//Creates shape
+
+	PS.applyRect( x , y , 1, 1, PS.color, r, b, g ); // Center
+	PS.applyRect( x - 1, y - 1, 1, 1, PS.color, r, b, g ); // Top left
+	PS.applyRect( x - 1, y + 1, 1, 1, PS.color, r, b, g ); // Top right
+	PS.applyRect( x + 1, y - 1, 1, 1, PS.color, r, b, g ); // Bott left
+	PS.applyRect( x + 1, y + 1, 1, 1, PS.color, r, b, g ); // Bott right
+
+	// Play click sound
+
+	PS.audioPlay( "fx_coin1" );
 
 	// Add code here for mouse clicks/touches over a bead
 };

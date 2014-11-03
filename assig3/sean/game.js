@@ -36,6 +36,8 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
  *  	The toy plays 'ta-da!' if the entire grid is lit up white.
  */
 
+//Test comment!
+
 // The following comment lines are for JSLint. Don't remove them!
 
 /*jslint nomen: true, white: true */

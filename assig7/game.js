@@ -353,7 +353,7 @@ PS.touch = function( x, y, data, options ) {
 	"use strict";
 
 	// Uncomment the following line to inspect parameters
-	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
 	// Add code here for mouse clicks/touches over a bead
 

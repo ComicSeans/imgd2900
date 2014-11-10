@@ -55,6 +55,7 @@ var G; // best to keep it very short
 		SKY_COLOR_SILVER  : { r : 21, g : 21, b : 21 },
 		SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },
 
+		//Plane's
 		SKY_PLANE_RED     : 1,
 		SKY_PLANE_BLUE    : 2,
 		SKY_PLANE_GREEN   : 3,
@@ -63,7 +64,10 @@ var G; // best to keep it very short
 		SKY_PLANE_ORANGE  : 6,
 		SKY_PLANE_WHITE   : 7,
 		SKY_PLANE_SILVER  : 8,
-		SKY_PLANE_DEFAULT : 9,
+		CANNON_PLANE      : 9,
+		SELECTION_PLANE   : 10,
+		PLANE_TOP         : 11,
+
 
 		CANNON_COLOR_RED     : { r : 237, g : 27,  b : 36  },
 		CANNON_COLOR_BLUE    : { r : 41,  g : 170, b : 227 },
@@ -76,8 +80,95 @@ var G; // best to keep it very short
 
 		CANNON_COLOR_HIGHLIGHT : { r : 198, g : 161, b : 161 },
 
+		initSky : function () {
+			// Dark night sky
+			PS.gridPlane(0); // bottommost plane
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_DEFAULT); // sets every bead to dark night sky color at start
+
+			//Background plane colors
+
+			// Red Sky
+			PS.gridPlane(G.SKY_PLANE_RED);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_RED);
+
+			// Blue Sky
+			PS.gridPlane(G.SKY_PLANE_BLUE);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_BLUE);
+
+			// Green Sky
+			PS.gridPlane(G.SKY_PLANE_GREEN);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_GREEN);
+
+			// Yellow Sky
+			PS.gridPlane(G.SKY_PLANE_YELLOW);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_YELLOW);
+
+			// Purple Sky
+			PS.gridPlane(G.SKY_PLANE_PURPLE);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_PURPLE);
+
+			// Orange Sky
+			PS.gridPlane(G.SKY_PLANE_ORANGE);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_ORANGE);
+
+			// White Sky
+			PS.gridPlane(G.SKY_PLANE_WHITE);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_WHITE);
+
+			// Silver Sky
+			PS.gridPlane(G.SKY_PLANE_SILVER);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_SILVER);
+		},
+
+		initSprites : function () {
+			G.CANNON_SPR_RED    = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_BLUE   = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_GREEN  = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_YELLOW = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_PURPLE = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_ORANGE = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_WHITE  = PS.spriteSolid(2, 3);
+			G.CANNON_SPR_SILVER = PS.spriteSolid(2, 3);
+			G.SELECTION_MARKER_SPR = PS.spriteSolid(2, 1);
+
+			PS.spriteSolidColor(G.CANNON_SPR_RED,    G.CANNON_COLOR_RED);
+			PS.spriteSolidColor(G.CANNON_SPR_BLUE,   G.CANNON_COLOR_BLUE);
+			PS.spriteSolidColor(G.CANNON_SPR_GREEN,  G.CANNON_COLOR_GREEN);
+			PS.spriteSolidColor(G.CANNON_SPR_YELLOW, G.CANNON_COLOR_YELLOW);
+			PS.spriteSolidColor(G.CANNON_SPR_PURPLE, G.CANNON_COLOR_PURPLE);
+			PS.spriteSolidColor(G.CANNON_SPR_ORANGE, G.CANNON_COLOR_ORANGE);
+			PS.spriteSolidColor(G.CANNON_SPR_WHITE,  G.CANNON_COLOR_WHITE);
+			PS.spriteSolidColor(G.CANNON_SPR_SILVER, G.CANNON_COLOR_SILVER);
+			PS.spriteSolidColor(G.SELECTION_MARKER_SPR, G.CANNON_COLOR_HIGHLIGHT);
+
+			PS.spritePlane(G.CANNON_SPR_RED,    G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_BLUE,   G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_GREEN,  G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_YELLOW, G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_PURPLE, G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_ORANGE, G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_WHITE,  G.CANNON_PLANE);
+			PS.spritePlane(G.CANNON_SPR_SILVER, G.CANNON_PLANE);
+			PS.spritePlane(G.SELECTION_MARKER_SPR, G.SELECTION_PLANE);
+
+			PS.spriteMove(G.CANNON_SPR_RED,    1, 29);
+			PS.spriteMove(G.CANNON_SPR_BLUE,   5, 29);
+			PS.spriteMove(G.CANNON_SPR_GREEN,  9, 29);
+			PS.spriteMove(G.CANNON_SPR_YELLOW, 13, 29);
+			PS.spriteMove(G.CANNON_SPR_PURPLE, 17, 29);
+			PS.spriteMove(G.CANNON_SPR_ORANGE, 21, 29);
+			PS.spriteMove(G.CANNON_SPR_WHITE,  25, 29);
+			PS.spriteMove(G.CANNON_SPR_SILVER, 29, 29);
+
+			PS.spriteMove(G.SELECTION_MARKER_SPR, 1, 31);
+		},
+
 		setSky : function ( ex_color ) {
 			PS.color(PS.ALL, PS.ALL, ex_color);
+		},
+
+		selectCannon : function ( cannon ) {
+
 		}
 
 	};
@@ -111,61 +202,11 @@ PS.init = function( system, options ) {
 	PS.statusColor(PS.COLOR_WHITE);
 	PS.statusText("Chromaworks");
 
-	// Dark night sky
-	PS.gridPlane(0); // bottommost plane
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_DEFAULT); // sets every bead to dark night sky color at start
+	G.initSky();
 
-	//Background plane colors
+	PS.gridPlane(G.PLANE_TOP);
 
-	// Red Sky
-	PS.gridPlane(G.SKY_PLANE_RED);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_RED);
-
-	// Blue Sky
-	PS.gridPlane(G.SKY_PLANE_BLUE);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_BLUE);
-
-	// Green Sky
-	PS.gridPlane(G.SKY_PLANE_GREEN);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_GREEN);
-
-	// Yellow Sky
-	PS.gridPlane(G.SKY_PLANE_YELLOW);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_YELLOW);
-
-	// Purple Sky
-	PS.gridPlane(G.SKY_PLANE_PURPLE);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_PURPLE);
-
-	// Orange Sky
-	PS.gridPlane(G.SKY_PLANE_ORANGE);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_ORANGE);
-
-	// White Sky
-	PS.gridPlane(G.SKY_PLANE_WHITE);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_WHITE);
-
-	// Silver Sky
-	PS.gridPlane(G.SKY_PLANE_SILVER);
-	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_SILVER);
-
-	PS.gridPlane( 10 ) ;
-	//I tried the method with the array in the tutorials, but it always broke on tests
-	//Here is just the green cannon
-
-	PS.alpha( 2, 31, PS.ALPHA_OPAQUE );
-	PS.alpha( 2, 30, PS.ALPHA_OPAQUE );
-	PS.alpha( 2, 29, PS.ALPHA_OPAQUE );
-	PS.alpha( 3, 31, PS.ALPHA_OPAQUE );
-	PS.alpha( 3, 30, PS.ALPHA_OPAQUE );
-	PS.alpha( 3, 29, PS.ALPHA_OPAQUE );
-
-	PS.color( 2, 31, 58, 181, 75 ) ;
-	PS.color( 2, 30, 58, 181, 75 ) ;
-	PS.color( 2, 29, 58, 181, 75 ) ;
-	PS.color( 3, 31, 58, 181, 75 ) ;
-	PS.color( 3, 30, 58, 181, 75 ) ;
-	PS.color( 3, 29, 58, 181, 75 ) ;
+	G.initSprites();
 
 	//Pre-load Audio
 	PS.audioLoad( "fx_blip",   { lock: true } );

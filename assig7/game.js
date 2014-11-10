@@ -230,7 +230,7 @@ var G; // best to keep it very short
 				color.g = PS.random(25) + 230; // random green 231-255
 				color.b = PS.random(41) + 214; // random blue 215-255
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_ORANGE).x){
-				PS.debug("ORANGE");
+				//PS.debug("ORANGE");
 				// Orange Explosions
 				color.r = PS.random(26) + 229; // random red 230-255
 				color.g = PS.random(62) + 113; // random green 114-175

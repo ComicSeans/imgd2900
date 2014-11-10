@@ -1,4 +1,5 @@
 // game.js for Perlenspiel 3.1
+// This game is released to the public domain
 
 /*
 Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
@@ -24,9 +25,28 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 /*jslint nomen: true, white: true */
 /*global PS */
 
-// This is a template for creating new Perlenspiel games
+// This variable creates a global namespace
+// for game-specific code and variables
 
-// All of the functions below MUST exist, or the engine will complain!
+var G; // best to keep it very short
+
+// This self-invoking function initializes
+// the public namespace variable G,
+// and also encapsulates private variables
+// and functions
+
+( function () {
+	"use strict";
+
+	// This is where G is declared as an object,
+	// and its properties initialized
+
+	G = {
+		width : 32, // width of grid
+		height : 32 // height of grid
+
+	};
+}() );
 
 // PS.init( system, options )
 // Initializes the game
@@ -43,16 +63,13 @@ PS.init = function( system, options ) {
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
 
-	PS.gridSize(32, 32);
-
-	// Add any other initialization code you need here
-
-	//PS.bgColor( PS.ALL , PS.ALL , PS.COLOR_BLUE );
+	PS.gridSize(G.width, G.height);
 
 	PS.gridColor(PS.COLOR_BLACK); // sets color of space outside grid
 
 	PS.border(PS.ALL, PS.ALL, 0); // hides grid lines
 
+	//Set title
 	PS.statusColor(PS.COLOR_WHITE);
 	PS.statusText("Chromaworks");
 

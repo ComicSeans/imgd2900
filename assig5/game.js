@@ -53,7 +53,8 @@ var G; // best to keep it very short
 		SKY_COLOR_ORANGE  : { r : 21, g : 16, b : 0  },
 		SKY_COLOR_WHITE   : { r : 26, g : 26, b : 26 },
 		SKY_COLOR_SILVER  : { r : 21, g : 21, b : 21 },
-		SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },
+		//SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },
+		SKY_COLOR_DEFAULT : PS.COLOR_BLACK,
 
 		//Plane's
 		SKY_PLANE_RED     : 1,
@@ -64,9 +65,10 @@ var G; // best to keep it very short
 		SKY_PLANE_ORANGE  : 6,
 		SKY_PLANE_WHITE   : 7,
 		SKY_PLANE_SILVER  : 8,
-		CANNON_PLANE      : 9,
-		SELECTION_PLANE   : 10,
-		PLANE_TOP         : 11,
+		FIREWORKS_PLANE   : 9,
+		CANNON_PLANE      : 10,
+		SELECTION_PLANE   : 11,
+		PLANE_TOP         : 12,
 
 
 		CANNON_COLOR_RED     : { r : 237, g : 27,  b : 36  },
@@ -74,11 +76,13 @@ var G; // best to keep it very short
 		CANNON_COLOR_GREEN   : { r : 58,  g : 181, b : 75  },
 		CANNON_COLOR_YELLOW  : { r : 255, g : 221, b : 25  },
 		CANNON_COLOR_PURPLE  : { r : 101, g : 45,  b : 144 },
-		CANNON_COLOR_ORANGE  : { r : 24,  g : 146, b : 30  },
+		CANNON_COLOR_ORANGE  : { r : 247, g : 146, b : 30  },
 		CANNON_COLOR_WHITE   : { r : 224, g : 242, b : 254 },
 		CANNON_COLOR_SILVER  : { r : 210, g : 211, b : 213 },
 
 		CANNON_COLOR_HIGHLIGHT : { r : 198, g : 161, b : 161 },
+
+		FIREWORKS_DELAY : 180,
 
 		initSky : function () {
 			// Dark night sky
@@ -163,12 +167,129 @@ var G; // best to keep it very short
 			PS.spriteMove(G.SELECTION_MARKER_SPR, 1, 31);
 		},
 
-		setSky : function ( ex_color ) {
-			PS.color(PS.ALL, PS.ALL, ex_color);
+		setSky : function ( sky ) {
+			if(sky == "red"){
+				PS.gridPlane(G.SKY_PLANE_RED);
+			} else if(sky == "blue"){
+				PS.gridPlane(G.SKY_PLANE_BLUE);
+			} else if(sky == "green"){
+				PS.gridPlane(G.SKY_PLANE_GREEN);
+			} else if(sky == "yellow"){
+				PS.gridPlane(G.SKY_PLANE_YELLOW);
+			} else if(sky == "purple"){
+				PS.gridPlane(G.SKY_PLANE_PURPLE);
+			} else if(sky == "orange"){
+				PS.gridPlane(G.SKY_PLANE_ORANGE);
+			} else if(sky == "white"){
+				PS.gridPlane(G.SKY_PLANE_WHITE);
+			} else if(sky == "silver"){
+				PS.gridPlane(G.SKY_PLANE_SILVER);
+			}
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+			PS.fade(PS.ALL, PS.ALL, G.FIREWORKS_DELAY);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
 		},
 
-		selectCannon : function ( cannon ) {
+		getSelectedColor : function (){
+			var color = "";
+			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
+			if(sel_x >= PS.spriteMove(G.CANNON_SPR_SILVER).x){
+				color = "silver";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_WHITE).x){
+				color = "white";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_ORANGE).x){
+				color = "orange";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_PURPLE).x){
+				color = "purple";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_YELLOW).x){
+				color = "yellow";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_GREEN).x){
+				color = "green";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_BLUE).x){
+				color = "blue";
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_RED).x){
+				color = "red";
+			}
+			return color;
+		},
 
+		getFireworksColor : function () {
+			var color = {r : 0, g : 0, b : 0};
+			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
+			//PS.debug("sel_x : "+ sel_x + "\n");
+			if(sel_x >= PS.spriteMove(G.CANNON_SPR_SILVER).x){
+				//PS.debug("SILVER");
+				// Silver Explosions
+				color.r = PS.random(36) + 189; // random red 190-225
+				color.g = PS.random(32) + 195; // random green 196-227
+				color.b = PS.random(83) + 172; // random blue 173-255
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_WHITE).x){
+				//PS.debug("WHITE");
+				// White Explosions
+				color.r = PS.random(41) + 214; // random red 215-255
+				color.g = PS.random(25) + 230; // random green 231-255
+				color.b = PS.random(41) + 214; // random blue 215-255
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_ORANGE).x){
+				PS.debug("ORANGE");
+				// Orange Explosions
+				color.r = PS.random(26) + 229; // random red 230-255
+				color.g = PS.random(62) + 113; // random green 114-175
+				color.b = PS.random(91) - 1; // random blue 0-90
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_PURPLE).x){
+				//PS.debug("PURPLE");
+				// Purple Explosions
+				color.r = PS.random(79) + 85; // random red 86-164
+				color.g = PS.random(93) - 1; // random green 0-94
+				color.b = PS.random(101) + 91; // random blue 92-192
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_YELLOW).x){
+				//PS.debug("YELLOW");
+				// Yellow Explosions
+				color.r = PS.random(24) + 231; // random red 232-255
+				color.g = PS.random(48) + 207; // random green 208-255
+				color.b = PS.random(102) - 1; // random blue 0-101
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_GREEN).x){
+				//PS.debug("GREEN");
+				// Green Explosions
+				color.r = PS.random(129) - 1; // random red 0-128
+				color.g = PS.random(111) + 144; // random green 145-255
+				color.b = PS.random(51) + 81; // random blue 82-132
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_BLUE).x){
+				//PS.debug("BLUE");
+				// Blue Explosions
+				color.r = PS.random(88) + 54; // random red 55-142
+				color.g = PS.random(152) + 103; // random green 104-255
+				color.b = PS.random(78) + 177; // random blue 178-255
+			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_RED).x){
+				//PS.debug("RED");
+				// Red Explosions
+				color.r = PS.random(134) + 121; // random red 122-255
+				color.g = PS.random(9) + 17; // random green 18-26
+				color.b = PS.random(33) +41; // random blue 42-74
+			}
+			//PS.debug("\n");
+			return color;
+		},
+
+		initCannonExecFuncs : function () {
+			//for every cannon
+			for(var c = 0; c < 8; c++){
+				//top corner of the cannon
+				var c_x = 1 + 4 * c;
+				var c_y = 29;
+				//for every cell in the cannon
+				for(var x = c_x; x < c_x + 2; x++){
+					for(var y = c_y; y < c_y + 3; y++){
+						//set the exec function of the board
+						PS.exec(x, y, function(x, y, data){
+							if(x % 2 == 0){
+								x--;
+							}
+							PS.spriteMove(G.SELECTION_MARKER_SPR, x, 31);
+							PS.audioPlay("fx_blip");
+						});
+					}
+				}
+			}
 		}
 
 	};
@@ -193,7 +314,7 @@ PS.init = function( system, options ) {
 	PS.gridSize(G.width, G.height);
 
 	// sets color of space outside grid
-	PS.gridColor(PS.COLOR_BLACK);
+	PS.gridColor(G.SKY_COLOR_DEFAULT);
 
 	// hides grid lines
 	PS.border(PS.ALL, PS.ALL, 0);
@@ -204,9 +325,11 @@ PS.init = function( system, options ) {
 
 	G.initSky();
 
-	PS.gridPlane(G.PLANE_TOP);
+	PS.gridPlane(G.FIREWORKS_PLANE);
 
 	G.initSprites();
+
+	G.initCannonExecFuncs();
 
 	//Pre-load Audio
 	PS.audioLoad( "fx_blip",   { lock: true } );
@@ -230,7 +353,7 @@ PS.touch = function( x, y, data, options ) {
 	"use strict";
 
 	// Uncomment the following line to inspect parameters
-	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
 	// Add code here for mouse clicks/touches over a bead
 
@@ -239,73 +362,32 @@ PS.touch = function( x, y, data, options ) {
 	// to be above the background color changes
 	// but below the cannon colors on Plane 10
 
-	// PS.gridPlane( 9 );
-
-
+	if(y < 29) {
+		var color = G.getFireworksColor();
+		PS.gridPlane(G.FIREWORKS_PLANE);
+		PS.alpha(x, y, PS.ALPHA_OPAQUE);
+		PS.color(x, y, color);
+		PS.fade(x, y, G.FIREWORKS_DELAY);
+		PS.alpha(x, y, PS.ALPHA_TRANSPARENT);
+		PS.timerStart(G.FIREWORKS_DELAY + 3, function(){
+			if(PS.color(x, y) != 0) {
+				PS.radius(x, y, 0);
+			}
+		});
+		PS.radius(x, y, 50);
+		//G.setSky(G.getSelectedColor());
+	}
 	// Firework color code
-/*
-	// Red Explosions
-	r = PS.random(134) + 121; // random red 122-255
-	g = PS.random(9) + 17; // random green 18-26
-	b = PS.random(33) +41; // random blue 42-74
-
-	// Blue Explosions
-	r = PS.random(88) + 54; // random red 55-142
-	g = PS.random(152) + 103; // random green 104-255
-	b = PS.random(78) + 177; // random blue 178-255
-
-	// Green Explosions
-	r = PS.random(129) - 1; // random red 0-128
-	g = PS.random(111) + 144; // random green 145-255
-	b = PS.random(51) + 81; // random blue 82-132
-
-	// Yellow Explosions
-	r = PS.random(24) + 231; // random red 232-255
-	g = PS.random(48) + 207; // random green 208-255
-	b = PS.random(102) - 1; // random blue 0-101
-
-	// Purple Explosions
-	r = PS.random(79) + 85; // random red 86-164
-	g = PS.random(93) - 1; // random green 0-94
-	b = PS.random(101) + 91; // random blue 92-192
-
-	// Orange Explosions
-	r = PS.random(26) + 229; // random red 230-255
-	g = PS.random(62) + 113; // random green 114-175
-	b = PS.random(91) - 1; // random blue 0-90
-
-	// White Explosions
-	r = PS.random(41) + 214; // random red 215-255
-	g = PS.random(25) + 230; // random green 231-255
-	b = PS.random(41) + 214; // random blue 215-255
-
-	// Silver Explosions
-	r = PS.random(36) + 189; // random red 190-225
-	g = PS.random(32) + 195; // random green 196-227
-	b = PS.random(83) + 172; // random blue 173-255
-
-
-
-
-
-
-
 
 	//Audio
 
-	PS.AudioPlay( "fx_blip" ); // hovering between cannon colors
-	PS.AudioPlay( "fx_bloop" ); // selecting cannon color
-
-	PS.AudioPlay( "fx_blast1" ); //explosion variation 1
-	PS.AudioPlay( "fx_blast2" ); //explosion variation 2
-	PS.AudioPlay( "fx_blast3" ); //explosion variation 3
-	PS.AudioPlay( "fx_blast4" ); //explosion variation 4
-
-
-
-*/
-
-
+	//PS.AudioPlay( "fx_blip" ); // hovering between cannon colors
+	//PS.AudioPlay( "fx_bloop" ); // selecting cannon color
+    //
+	//PS.AudioPlay( "fx_blast1" ); //explosion variation 1
+	//PS.AudioPlay( "fx_blast2" ); //explosion variation 2
+	//PS.AudioPlay( "fx_blast3" ); //explosion variation 3
+	//PS.AudioPlay( "fx_blast4" ); //explosion variation 4
 
 
 

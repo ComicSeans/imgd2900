@@ -43,7 +43,42 @@ var G; // best to keep it very short
 
 	G = {
 		width : 32, // width of grid
-		height : 32 // height of grid
+		height : 32, // height of grid
+
+		SKY_COLOR_RED     : { r : 21, g : 0,  b : 4  },
+		SKY_COLOR_BLUE    : { r : 0,  g : 10, b : 21 },
+		SKY_COLOR_GREEN   : { r : 1,  g : 21, b : 0  },
+		SKY_COLOR_YELLOW  : { r : 21, g : 11, b : 0  },
+		SKY_COLOR_PURPLE  : { r : 21, g : 0,  b : 13 },
+		SKY_COLOR_ORANGE  : { r : 21, g : 16, b : 0  },
+		SKY_COLOR_WHITE   : { r : 26, g : 26, b : 26 },
+		SKY_COLOR_SILVER  : { r : 21, g : 21, b : 21 },
+		SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },
+
+		SKY_PLANE_RED     : 1,
+		SKY_PLANE_BLUE    : 2,
+		SKY_PLANE_GREEN   : 3,
+		SKY_PLANE_YELLOW  : 4,
+		SKY_PLANE_PURPLE  : 5,
+		SKY_PLANE_ORANGE  : 6,
+		SKY_PLANE_WHITE   : 7,
+		SKY_PLANE_SILVER  : 8,
+		SKY_PLANE_DEFAULT : 9,
+
+		CANNON_COLOR_RED     : { r : 237, g : 27,  b : 36  },
+		CANNON_COLOR_BLUE    : { r : 41,  g : 170, b : 227 },
+		CANNON_COLOR_GREEN   : { r : 58,  g : 181, b : 75  },
+		CANNON_COLOR_YELLOW  : { r : 255, g : 221, b : 25  },
+		CANNON_COLOR_PURPLE  : { r : 101, g : 45,  b : 144 },
+		CANNON_COLOR_ORANGE  : { r : 24,  g : 146, b : 30  },
+		CANNON_COLOR_WHITE   : { r : 224, g : 242, b : 254 },
+		CANNON_COLOR_SILVER  : { r : 210, g : 211, b : 213 },
+
+		CANNON_COLOR_HIGHLIGHT : { r : 198, g : 161, b : 161 },
+
+		setSky : function ( ex_color ) {
+			PS.color(PS.ALL, PS.ALL, ex_color);
+		}
 
 	};
 }() );
@@ -63,11 +98,14 @@ PS.init = function( system, options ) {
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
 
+	//Set grid size
 	PS.gridSize(G.width, G.height);
 
-	PS.gridColor(PS.COLOR_BLACK); // sets color of space outside grid
+	// sets color of space outside grid
+	PS.gridColor(PS.COLOR_BLACK);
 
-	PS.border(PS.ALL, PS.ALL, 0); // hides grid lines
+	// hides grid lines
+	PS.border(PS.ALL, PS.ALL, 0);
 
 	//Set title
 	PS.statusColor(PS.COLOR_WHITE);
@@ -75,56 +113,41 @@ PS.init = function( system, options ) {
 
 	// Dark night sky
 	PS.gridPlane(0); // bottommost plane
-	PS.color(PS.ALL, PS.ALL, 0, 6, 12); // sets every bead to dark night sky color at start
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_DEFAULT); // sets every bead to dark night sky color at start
 
 	//Background plane colors
 
 	// Red Sky
-	PS.gridPlane(1);
-	PS.color(PS.ALL, PS.ALL, 21, 0, 4);
+	PS.gridPlane(G.SKY_PLANE_RED);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_RED);
 
 	// Blue Sky
-	PS.gridPlane(2);
-	PS.color(PS.ALL, PS.ALL, 0, 10, 21);
+	PS.gridPlane(G.SKY_PLANE_BLUE);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_BLUE);
 
 	// Green Sky
-	PS.gridPlane(3);
-	PS.color(PS.ALL, PS.ALL, 1, 21, 0);
+	PS.gridPlane(G.SKY_PLANE_GREEN);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_GREEN);
 
 	// Yellow Sky
-	PS.gridPlane(4);
-	PS.color(PS.ALL, PS.ALL, 21, 11, 0);
+	PS.gridPlane(G.SKY_PLANE_YELLOW);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_YELLOW);
 
 	// Purple Sky
-	PS.gridPlane(5);
-	PS.color(PS.ALL, PS.ALL, 21, 0, 13);
+	PS.gridPlane(G.SKY_PLANE_PURPLE);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_PURPLE);
 
 	// Orange Sky
-	PS.gridPlane(6);
-	PS.color(PS.ALL, PS.ALL, 21, 16, 0);
+	PS.gridPlane(G.SKY_PLANE_ORANGE);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_ORANGE);
 
 	// White Sky
-	PS.gridPlane(7);
-	PS.color(PS.ALL, PS.ALL, 26, 26, 26);
+	PS.gridPlane(G.SKY_PLANE_WHITE);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_WHITE);
 
 	// Silver Sky
-	PS.gridPlane(8);
-	PS.color(PS.ALL, PS.ALL, 21, 21, 21);
-
-
-	// Cannon Colors
-	/*
-	Red = 237, 27 ,36
-	Blue = 41, 170, 227
-	Green = 58, 181, 75
-	Yellow = 255, 221, 25
-	Purple = 101, 45, 144
-	Orange = 24, 146, 30
-	White = 224, 242, 254
-	Silver = 210, 211, 213
-
-	Highlight = 198, 161, 161
-	*/
+	PS.gridPlane(G.SKY_PLANE_SILVER);
+	PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_SILVER);
 
 	PS.gridPlane( 10 ) ;
 	//I tried the method with the array in the tutorials, but it always broke on tests
@@ -144,9 +167,9 @@ PS.init = function( system, options ) {
 	PS.color( 3, 30, 58, 181, 75 ) ;
 	PS.color( 3, 29, 58, 181, 75 ) ;
 
-
-	PS.audioLoad( "fx_blip", { lock: true } );
-	PS.audioLoad( "fx_bloop", { lock: true } );
+	//Pre-load Audio
+	PS.audioLoad( "fx_blip",   { lock: true } );
+	PS.audioLoad( "fx_bloop",  { lock: true } );
 	PS.audioLoad( "fx_blast1", { lock: true } );
 	PS.audioLoad( "fx_blast2", { lock: true } );
 	PS.audioLoad( "fx_blast3", { lock: true } );

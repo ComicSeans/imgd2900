@@ -77,10 +77,11 @@ var G;
 		CANNON_COLOR_WHITE   : { r : 224, g : 242, b : 254 },
 		CANNON_COLOR_SILVER  : { r : 210, g : 211, b : 213 },
 
-
 		CANNON_COLOR_HIGHLIGHT : { r : 198, g : 161, b : 161 },
 
-		FIREWORKS_DELAY : 180,
+		FIREWORKS : [],
+
+		FIREWORKS_DELAY : 20,
 
 		initSky : function () {
 			//Make the sky black
@@ -186,12 +187,12 @@ var G;
 				PS.gridPlane(G.SKY_PLANE_GLOW);
 				var currentSkyAlpha = PS.alpha(1, 1);
 				if(currentSkyAlpha > 0) {
-					PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentSkyAlpha - 1) + "\n");
+					//PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentSkyAlpha - 1) + "\n");
 					PS.alpha(PS.ALL, PS.ALL, currentSkyAlpha - 1);
 				}
 				else{
 					G.UPDATE_FLAGS.FADE_SKY_GLOW = false;
-					PS.debug("Finished fading sky\n");
+					//PS.debug("Finished fading sky\n");
 				}
 			}
 			//Update the flash of the fireworks
@@ -201,20 +202,66 @@ var G;
 				var currentFlashAlpha = PS.alpha(1, 1);
 				if(currentFlashAlpha > 0) {
 					//set the alpha of the flash grid layer
-					PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentFlashAlpha - 30) + "\n");
+					//PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentFlashAlpha - 30) + "\n");
 					PS.alpha(PS.ALL, PS.ALL, currentFlashAlpha - 30);
 					//set the color of the grid shadow between white and black
 					G.setGridShadowColor({ r : G.gridShadowColor.r - 30,
 										   g : G.gridShadowColor.g - 30,
 										   b : G.gridShadowColor.b - 30});
-					PS.debug("grid shadow color is "+ G.gridShadowColor.r + " " + G.gridShadowColor.g + " " + G.gridShadowColor.b + "\n");
+					//PS.debug("grid shadow color is "+ G.gridShadowColor.r + " " + G.gridShadowColor.g + " " + G.gridShadowColor.b + "\n");
 				}
 				else{
 					PS.gridShadow(true, PS.COLOR_BLACK);
 					G.UPDATE_FLAGS.FADE_SKY_FLASH = false;
-					PS.debug("Finished fading sky\n");
+					//PS.debug("Finished flashing the sky\n");
 				}
 			}
+			////////////////updateFireworks///////////////
+			//clear old fireworks
+			PS.gridPlane(G.FIREWORKS_PLANE);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
+
+			//PS.debug("num fireworks " + G.FIREWORKS.length);
+			//if(G.FIREWORKS.length == 1){
+			//	PS.debug(" w/ delay: " + G.FIREWORKS.delay + "\n");
+			//}
+			//work on every firework
+			G.FIREWORKS.forEach(function(entry){
+				//draw frame one
+				//PS.debug("FW = "+entry.x+", "+entry.y+" delay of "+entry.delay+" frame : "+entry.frameNum+"\n");
+				if(entry.frameNum == 0){
+					PS.color(entry.x, entry.y, entry.color);
+					PS.alpha(entry.x, entry.y, PS.ALPHA_OPAQUE);
+				}
+				else if(entry.frameNum == 1){
+					var d = 2;
+					for(var i = 0; i < 2; i++){
+						PS.color(entry.x + d, entry.y + d, entry.color);
+						PS.color(entry.x + d, entry.y - d, entry.color);
+						PS.color(entry.x - d, entry.y + d, entry.color);
+						PS.color(entry.x - d, entry.y - d, entry.color);
+						PS.alpha(entry.x + d, entry.y + d, PS.ALPHA_OPAQUE);
+						PS.alpha(entry.x + d, entry.y - d, PS.ALPHA_OPAQUE);
+						PS.alpha(entry.x - d, entry.y + d, PS.ALPHA_OPAQUE);
+						PS.alpha(entry.x - d, entry.y - d, PS.ALPHA_OPAQUE);
+						d--;
+					}
+					PS.color(entry.x, entry.y, entry.color);
+					PS.alpha(entry.x, entry.y, PS.ALPHA_OPAQUE);
+				}
+				entry.delay--;
+				if(entry.frameNum < 2) {
+					PS.debug("frame : " + entry.frameNum + ", delay : " + entry.delay + "\n");
+				}
+				if(entry.delay < 1){
+					entry.frameNum += 1;
+					entry.delay = G.FIREWORKS_DELAY;
+				}
+			});
+		},
+
+		constructFirework : function (newX, newY, newColor) {
+			return {x : newX, y : newY, color : newColor, frameNum : 0, delay : G.FIREWORKS_DELAY};
 		},
 
 		fadeSky : function () {
@@ -242,7 +289,6 @@ var G;
 			//set the sky to the color of the given explosion
 			PS.gridPlane(G.SKY_PLANE_GLOW);
 			if(sky == "red"){
-				PS.debug("Sky color set to red\n");
 				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_RED);
 			} else if(sky == "blue"){
 				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_BLUE);
@@ -424,14 +470,18 @@ PS.touch = function( x, y, data, options ) {
 	if(y < 29) {
 		//draw firework
 		var color = G.getFireworksColor();
-		PS.gridPlane(G.FIREWORKS_PLANE);
-		PS.alpha(x, y, PS.ALPHA_OPAQUE);
-		PS.color(x, y, color);
+		G.FIREWORKS[0] = G.constructFirework(x, y, color);
+		//var testFW = G.constructFirework(x, y, color);
+		//PS.debug("FW = "+G.FIREWORKS[0].x+", "+G.FIREWORKS[0].y+" delay of "+G.FIREWORKS[0].delay+"\n");
+		//PS.gridPlane(G.FIREWORKS_PLANE);
+		//PS.alpha(x, y, PS.ALPHA_OPAQUE);
+		//PS.color(x, y, color);
 
 		//set the glow of the sky, and flash the sky
 		G.setSky(G.getSelectedColor());
 		G.flashSky();
 		G.fadeSky();
+
 	}
 
 	//Audio

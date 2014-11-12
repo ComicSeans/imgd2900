@@ -489,10 +489,10 @@ PS.touch = function( x, y, data, options ) {
 	//PS.AudioPlay( "fx_blip" ); // hovering between cannon colors
 	//PS.AudioPlay( "fx_bloop" ); // selecting cannon color
     //
-	//PS.AudioPlay( "fx_blast1" ); //explosion variation 1
-	//PS.AudioPlay( "fx_blast2" ); //explosion variation 2
-	//PS.AudioPlay( "fx_blast3" ); //explosion variation 3
-	//PS.AudioPlay( "fx_blast4" ); //explosion variation 4
+	//PS.AudioPlay( "FW1" ); //explosion variation 1
+	//PS.AudioPlay( "FW2" ); //explosion variation 2
+	//PS.AudioPlay( "FW3" ); //explosion variation 3
+	//PS.AudioPlay( "FW4" ); //explosion variation 4
 
 
 

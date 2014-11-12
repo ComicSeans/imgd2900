@@ -45,6 +45,7 @@ var G; // best to keep it very short
 		width : 32, // width of grid
 		height : 32, // height of grid
 
+		//Color the sky is lit up to
 		SKY_COLOR_RED     : { r : 21, g : 0,  b : 4  },
 		SKY_COLOR_BLUE    : { r : 0,  g : 10, b : 21 },
 		SKY_COLOR_GREEN   : { r : 1,  g : 21, b : 0  },
@@ -53,10 +54,10 @@ var G; // best to keep it very short
 		SKY_COLOR_ORANGE  : { r : 21, g : 16, b : 0  },
 		SKY_COLOR_WHITE   : { r : 26, g : 26, b : 26 },
 		SKY_COLOR_SILVER  : { r : 21, g : 21, b : 21 },
-		//SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },
+		//SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },	
 		SKY_COLOR_DEFAULT : PS.COLOR_BLACK,
 
-		//Plane's
+		//Planes
 		SKY_PLANE_RED     : 1,
 		SKY_PLANE_BLUE    : 2,
 		SKY_PLANE_GREEN   : 3,
@@ -70,7 +71,7 @@ var G; // best to keep it very short
 		SELECTION_PLANE   : 11,
 		PLANE_TOP         : 12,
 
-
+		//Cannon colors
 		CANNON_COLOR_RED     : { r : 237, g : 27,  b : 36  },
 		CANNON_COLOR_BLUE    : { r : 41,  g : 170, b : 227 },
 		CANNON_COLOR_GREEN   : { r : 58,  g : 181, b : 75  },
@@ -79,6 +80,7 @@ var G; // best to keep it very short
 		CANNON_COLOR_ORANGE  : { r : 247, g : 146, b : 30  },
 		CANNON_COLOR_WHITE   : { r : 224, g : 242, b : 254 },
 		CANNON_COLOR_SILVER  : { r : 210, g : 211, b : 213 },
+
 
 		CANNON_COLOR_HIGHLIGHT : { r : 198, g : 161, b : 161 },
 
@@ -167,7 +169,14 @@ var G; // best to keep it very short
 			PS.spriteMove(G.SELECTION_MARKER_SPR, 1, 31);
 		},
 
+		/**
+		 * Sets the color of the sky according to the color of the firework going off.
+		 *
+		 * @param sky
+		 * 		"red", "blue", any sky color
+		 */
 		setSky : function ( sky ) {
+			var oldGridPlane = PS.gridPlane();
 			if(sky == "red"){
 				PS.gridPlane(G.SKY_PLANE_RED);
 			} else if(sky == "blue"){
@@ -185,11 +194,18 @@ var G; // best to keep it very short
 			} else if(sky == "silver"){
 				PS.gridPlane(G.SKY_PLANE_SILVER);
 			}
-			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
-			PS.fade(PS.ALL, PS.ALL, G.FIREWORKS_DELAY);
+			//PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+			//PS.fade(PS.ALL, PS.ALL, G.FIREWORKS_DELAY);
 			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
+
+			PS.gridPlane(oldGridPlane);
 		},
 
+		/**
+		 * Returns a lowercase string of the cannon color selected.
+		 *
+		 * @returns {string}
+		 */
 		getSelectedColor : function (){
 			var color = "";
 			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
@@ -213,6 +229,12 @@ var G; // best to keep it very short
 			return color;
 		},
 
+		/**
+		 * Generates and returns a color in the range of the color
+		 * of the selected cannon.
+		 *
+		 * @returns {{r: number, g: number, b: number}}
+		 */
 		getFireworksColor : function () {
 			var color = {r : 0, g : 0, b : 0};
 			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
@@ -354,13 +376,6 @@ PS.touch = function( x, y, data, options ) {
 
 	// Uncomment the following line to inspect parameters
 	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
-
-	// Add code here for mouse clicks/touches over a bead
-
-
-	// All firework explosions should lie be on Plane( 9 )
-	// to be above the background color changes
-	// but below the cannon colors on Plane 10
 
 	if(y < 29) {
 		var color = G.getFireworksColor();

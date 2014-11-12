@@ -56,21 +56,16 @@ var G;
 		SKY_COLOR_WHITE   : { r : 26, g : 26, b : 26 },
 		SKY_COLOR_SILVER  : { r : 21, g : 21, b : 21 },
 		//SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },	
-		SKY_COLOR_DEFAULT : PS.COLOR_BLACK,
+		SKY_COLOR_DEFAULT : { r : 0, g : 0, b : 0 },
 
 		//Planes
-		SKY_PLANE_RED     : 1,
-		SKY_PLANE_BLUE    : 2,
-		SKY_PLANE_GREEN   : 3,
-		SKY_PLANE_YELLOW  : 4,
-		SKY_PLANE_PURPLE  : 5,
-		SKY_PLANE_ORANGE  : 6,
-		SKY_PLANE_WHITE   : 7,
-		SKY_PLANE_SILVER  : 8,
-		FIREWORKS_PLANE   : 9,
-		CANNON_PLANE      : 10,
-		SELECTION_PLANE   : 11,
-		PLANE_TOP         : 12,
+		SKY_PLANE_BG      : 8,
+		SKY_PLANE_GLOW    : 9,
+		FIREWORKS_PLANE   : 11,
+		CANNON_PLANE      : 12,
+		SELECTION_PLANE   : 13,
+		SKY_PLANE_FLASH   : 14,
+		PLANE_TOP         : 15,
 
 		//Cannon colors
 		CANNON_COLOR_RED     : { r : 237, g : 27,  b : 36  },
@@ -88,43 +83,16 @@ var G;
 		FIREWORKS_DELAY : 180,
 
 		initSky : function () {
-			// Dark night sky
-			PS.gridPlane(0); // bottommost plane
+			//Make the sky black
+			PS.gridPlane(G.SKY_PLANE_BG);
+			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_DEFAULT);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+
+			//Make a plane for the sky to glow on
+			PS.gridPlane(G.SKY_PLANE_GLOW); // bottommost plane
 			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_DEFAULT); // sets every bead to dark night sky color at start
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
 
-			//Background plane colors
-
-			// Red Sky
-			PS.gridPlane(G.SKY_PLANE_RED);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_RED);
-
-			// Blue Sky
-			PS.gridPlane(G.SKY_PLANE_BLUE);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_BLUE);
-
-			// Green Sky
-			PS.gridPlane(G.SKY_PLANE_GREEN);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_GREEN);
-
-			// Yellow Sky
-			PS.gridPlane(G.SKY_PLANE_YELLOW);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_YELLOW);
-
-			// Purple Sky
-			PS.gridPlane(G.SKY_PLANE_PURPLE);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_PURPLE);
-
-			// Orange Sky
-			PS.gridPlane(G.SKY_PLANE_ORANGE);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_ORANGE);
-
-			// White Sky
-			PS.gridPlane(G.SKY_PLANE_WHITE);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_WHITE);
-
-			// Silver Sky
-			PS.gridPlane(G.SKY_PLANE_SILVER);
-			PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_SILVER);
 		},
 
 		initSprites : function () {
@@ -170,6 +138,97 @@ var G;
 			PS.spriteMove(G.SELECTION_MARKER_SPR, 1, 31);
 		},
 
+		initCannonExecFuncs : function () {
+			//for every cannon
+			for(var c = 0; c < 8; c++){
+				//top corner of the cannon
+				var c_x = 1 + 4 * c;
+				var c_y = 29;
+				//for every cell in the cannon
+				for(var x = c_x; x < c_x + 2; x++){
+					for(var y = c_y; y < c_y + 3; y++){
+						//set the exec function of the board
+						PS.exec(x, y, function(x, y, data){
+							if(x % 2 == 0){
+								x--;
+							}
+							PS.spriteMove(G.SELECTION_MARKER_SPR, x, 31);
+							PS.audioPlay("fx_blip");
+						});
+					}
+				}
+			}
+		},
+
+		UPDATE_FLAGS : {
+			FADE_SKY_GLOW : false,
+			FADE_SKY_FLASH : false
+		},
+
+		gridShadowColor : { r : 0, g : 0, b : 0 },
+
+		/**
+		 * Set the grid shadow and save it to a var in the game namespace.
+		 * @param newColor
+		 * 		Color to set the grid shadow, must be in { r : number, g : number, b : number } format
+		 */
+		setGridShadowColor : function(newColor){
+			G.gridShadowColor = newColor;
+			PS.gridShadow(true, G.gridShadowColor);
+		},
+
+		/**
+		 * Update function called every tick
+		 */
+		update : function () {
+			//Update the glow of the sky
+			if(G.UPDATE_FLAGS.FADE_SKY_GLOW){
+				PS.gridPlane(G.SKY_PLANE_GLOW);
+				var currentSkyAlpha = PS.alpha(1, 1);
+				if(currentSkyAlpha > 0) {
+					PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentSkyAlpha - 1) + "\n");
+					PS.alpha(PS.ALL, PS.ALL, currentSkyAlpha - 1);
+				}
+				else{
+					G.UPDATE_FLAGS.FADE_SKY_GLOW = false;
+					PS.debug("Finished fading sky\n");
+				}
+			}
+			//Update the flash of the fireworks
+			if(G.UPDATE_FLAGS.FADE_SKY_FLASH)
+			{
+				PS.gridPlane(G.SKY_PLANE_FLASH);
+				var currentFlashAlpha = PS.alpha(1, 1);
+				if(currentFlashAlpha > 0) {
+					//set the alpha of the flash grid layer
+					PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentFlashAlpha - 30) + "\n");
+					PS.alpha(PS.ALL, PS.ALL, currentFlashAlpha - 30);
+					//set the color of the grid shadow between white and black
+					G.setGridShadowColor({ r : G.gridShadowColor.r - 30,
+										   g : G.gridShadowColor.g - 30,
+										   b : G.gridShadowColor.b - 30});
+					PS.debug("grid shadow color is "+ G.gridShadowColor.r + " " + G.gridShadowColor.g + " " + G.gridShadowColor.b + "\n");
+				}
+				else{
+					PS.gridShadow(true, PS.COLOR_BLACK);
+					G.UPDATE_FLAGS.FADE_SKY_FLASH = false;
+					PS.debug("Finished fading sky\n");
+				}
+			}
+		},
+
+		fadeSky : function () {
+			G.UPDATE_FLAGS.FADE_SKY_GLOW = true;
+		},
+
+		flashSky : function () {
+			PS.gridPlane(G.SKY_PLANE_FLASH);
+			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+			G.setGridShadowColor({r : 255, g : 255, b : 255});
+			G.UPDATE_FLAGS.FADE_SKY_FLASH = true;
+		},
+
 		/**
 		 * Sets the color of the sky according to the color of the firework going off.
 		 *
@@ -177,28 +236,32 @@ var G;
 		 * 		"red", "blue", any sky color
 		 */
 		setSky : function ( sky ) {
+			//recall the current grid plane to reset it later
 			var oldGridPlane = PS.gridPlane();
-			if(sky == "red"){
-				PS.gridPlane(G.SKY_PLANE_RED);
-			} else if(sky == "blue"){
-				PS.gridPlane(G.SKY_PLANE_BLUE);
-			} else if(sky == "green"){
-				PS.gridPlane(G.SKY_PLANE_GREEN);
-			} else if(sky == "yellow"){
-				PS.gridPlane(G.SKY_PLANE_YELLOW);
-			} else if(sky == "purple"){
-				PS.gridPlane(G.SKY_PLANE_PURPLE);
-			} else if(sky == "orange"){
-				PS.gridPlane(G.SKY_PLANE_ORANGE);
-			} else if(sky == "white"){
-				PS.gridPlane(G.SKY_PLANE_WHITE);
-			} else if(sky == "silver"){
-				PS.gridPlane(G.SKY_PLANE_SILVER);
-			}
-			//PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
-			//PS.fade(PS.ALL, PS.ALL, G.FIREWORKS_DELAY);
-			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
 
+			//set the sky to the color of the given explosion
+			PS.gridPlane(G.SKY_PLANE_GLOW);
+			if(sky == "red"){
+				PS.debug("Sky color set to red\n");
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_RED);
+			} else if(sky == "blue"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_BLUE);
+			} else if(sky == "green"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_GREEN);
+			} else if(sky == "yellow"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_YELLOW);
+			} else if(sky == "purple"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_PURPLE);
+			} else if(sky == "orange"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_ORANGE);
+			} else if(sky == "white"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_WHITE);
+			} else if(sky == "silver"){
+				PS.color(PS.ALL, PS.ALL, G.SKY_COLOR_SILVER);
+			}
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+
+			//reset the grid plane to what it was before this funciton call
 			PS.gridPlane(oldGridPlane);
 		},
 
@@ -291,28 +354,6 @@ var G;
 			}
 			//PS.debug("\n");
 			return color;
-		},
-
-		initCannonExecFuncs : function () {
-			//for every cannon
-			for(var c = 0; c < 8; c++){
-				//top corner of the cannon
-				var c_x = 1 + 4 * c;
-				var c_y = 29;
-				//for every cell in the cannon
-				for(var x = c_x; x < c_x + 2; x++){
-					for(var y = c_y; y < c_y + 3; y++){
-						//set the exec function of the board
-						PS.exec(x, y, function(x, y, data){
-							if(x % 2 == 0){
-								x--;
-							}
-							PS.spriteMove(G.SELECTION_MARKER_SPR, x, 31);
-							PS.audioPlay("fx_blip");
-						});
-					}
-				}
-			}
 		}
 
 	};
@@ -362,6 +403,7 @@ PS.init = function( system, options ) {
 	PS.audioLoad( "fx_blast3", { lock: true } );
 	PS.audioLoad( "fx_blast4", { lock: true } );
 
+	PS.timerStart(1, G.update);
 };
 
 // PS.touch ( x, y, data, options )
@@ -378,22 +420,19 @@ PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
+	//if clicking on the sky
 	if(y < 29) {
+		//draw firework
 		var color = G.getFireworksColor();
 		PS.gridPlane(G.FIREWORKS_PLANE);
 		PS.alpha(x, y, PS.ALPHA_OPAQUE);
 		PS.color(x, y, color);
-		PS.fade(x, y, G.FIREWORKS_DELAY);
-		PS.alpha(x, y, PS.ALPHA_TRANSPARENT);
-		PS.timerStart(G.FIREWORKS_DELAY + 3, function(){
-			if(PS.color(x, y) != 0) {
-				PS.radius(x, y, 0);
-			}
-		});
-		PS.radius(x, y, 50);
+
+		//set the glow of the sky, and flash the sky
 		G.setSky(G.getSelectedColor());
+		G.flashSky();
+		G.fadeSky();
 	}
-	// Firework color code
 
 	//Audio
 

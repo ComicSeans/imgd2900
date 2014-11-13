@@ -61,6 +61,7 @@ var G;
 		//Planes
 		SKY_PLANE_BG      : 8,
 		SKY_PLANE_GLOW    : 9,
+		SHOT_PLANE        : 10,
 		FIREWORKS_PLANE   : 11,
 		CANNON_PLANE      : 12,
 		SELECTION_PLANE   : 13,
@@ -79,7 +80,12 @@ var G;
 
 		CANNON_COLOR_HIGHLIGHT : { r : 198, g : 161, b : 161 },
 
+		SHOT_COLOR : PS.COLOR_GRAY_DARK,
+
 		FIREWORKS : [],
+
+		SHOTS : [],
+		SHOTS_TO_REMOVE : [],
 
 		FIREWORKS_DELAY : 20,
 
@@ -216,15 +222,45 @@ var G;
 					//PS.debug("Finished flashing the sky\n");
 				}
 			}
+			////////////////moveShots/////////////////////
+			G.SHOTS.forEach(function(entry){
+				var currShotPos = PS.spriteMove(entry.sprite);
+				PS.debug("Shot at " +  + currShotPos.x + ", " + currShotPos.y +"\n");
+				if(currShotPos.y > entry.destinationY){
+					var newX = entry.path[entry.step][0];
+					var newY = entry.path[entry.step][1];
+					PS.debug("Moving shot to " + newX + ", " + newY +"\n");
+					PS.spriteMove(entry.sprite, newX, newY);
+					entry.step++;
+				}
+				//explode!
+				else{
+					//mark for delete
+					G.SHOTS_TO_REMOVE.push(entry);
+					PS.spriteSolidAlpha(entry.sprite, PS.ALPHA_TRANSPARENT);
+
+					//make explosion
+					var color = G.getFireworksColor();
+					G.FIREWORKS.push(G.constructFirework(entry.destinationX, entry.destinationY, color));
+
+					//do sky coloring
+					G.setSky(G.getSelectedColor());
+					G.flashSky();
+					G.fadeSky();
+				}
+			});
+			//clean up spent shots
+			G.SHOTS_TO_REMOVE.forEach(function(entry){
+				PS.spriteDelete(entry.sprite);
+				G.SHOTS.splice(G.SHOTS.indexOf(entry), 1);
+			});
+			G.SHOTS_TO_REMOVE = [];
+
 			////////////////updateFireworks///////////////
 			//clear old fireworks
 			PS.gridPlane(G.FIREWORKS_PLANE);
 			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
 
-			//PS.debug("num fireworks " + G.FIREWORKS.length);
-			//if(G.FIREWORKS.length == 1){
-			//	PS.debug(" w/ delay: " + G.FIREWORKS.delay + "\n");
-			//}
 			//work on every firework
 			G.FIREWORKS.forEach(function(entry){
 				//draw frame one
@@ -258,6 +294,20 @@ var G;
 					entry.delay = G.FIREWORKS_DELAY;
 				}
 			});
+		},
+
+		constructShot : function (newPath, newDestinationX, newDestinationY) {
+			var sprite = PS.spriteSolid(1, 1);
+			PS.spriteSolidColor(sprite, G.SHOT_COLOR);
+			PS.spriteSolidAlpha(sprite, PS.ALPHA_OPAQUE);
+			PS.spritePlane(sprite, G.SHOT_PLANE);
+			PS.spriteMove(sprite, newPath[0][0], newPath[0][1]);
+			return { path : newPath,
+					 destinationX : newDestinationX,
+					 destinationY : newDestinationY,
+					 sprite : sprite,
+					 step : 0
+			};
 		},
 
 		constructFirework : function (newX, newY, newColor) {
@@ -468,19 +518,20 @@ PS.touch = function( x, y, data, options ) {
 
 	//if clicking on the sky
 	if(y < 29) {
-		//draw firework
-		var color = G.getFireworksColor();
-		G.FIREWORKS[0] = G.constructFirework(x, y, color);
-		//var testFW = G.constructFirework(x, y, color);
-		//PS.debug("FW = "+G.FIREWORKS[0].x+", "+G.FIREWORKS[0].y+" delay of "+G.FIREWORKS[0].delay+"\n");
-		//PS.gridPlane(G.FIREWORKS_PLANE);
-		//PS.alpha(x, y, PS.ALPHA_OPAQUE);
-		//PS.color(x, y, color);
+
+		//create firework
+		//var color = G.getFireworksColor();
+		//G.FIREWORKS[0] = G.constructFirework(x, y, color);
+
+		var launchLocation = PS.spriteMove(G.SELECTION_MARKER_SPR);
+		launchLocation.y -= 3;
+		var path = PS.line(launchLocation.x, launchLocation.y, x, y);
+		G.SHOTS.push(G.constructShot(path, x, y));
 
 		//set the glow of the sky, and flash the sky
-		G.setSky(G.getSelectedColor());
-		G.flashSky();
-		G.fadeSky();
+		//G.setSky(G.getSelectedColor());
+		//G.flashSky();
+		//G.fadeSky();
 
 	}
 

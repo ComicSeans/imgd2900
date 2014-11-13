@@ -83,6 +83,7 @@ var G;
 		SHOT_COLOR : PS.COLOR_GRAY_DARK,
 
 		FIREWORKS : [],
+		FIREWORKS_TO_REMOVE : [],
 
 		SHOTS : [],
 		SHOTS_TO_REMOVE : [],
@@ -225,11 +226,11 @@ var G;
 			////////////////moveShots/////////////////////
 			G.SHOTS.forEach(function(entry){
 				var currShotPos = PS.spriteMove(entry.sprite);
-				PS.debug("Shot at " +  + currShotPos.x + ", " + currShotPos.y +"\n");
+				//PS.debug("Shot at " +  + currShotPos.x + ", " + currShotPos.y +"\n");
 				if(currShotPos.y > entry.destinationY){
 					var newX = entry.path[entry.step][0];
 					var newY = entry.path[entry.step][1];
-					PS.debug("Moving shot to " + newX + ", " + newY +"\n");
+					//PS.debug("Moving shot to " + newX + ", " + newY +"\n");
 					PS.spriteMove(entry.sprite, newX, newY);
 					entry.step++;
 				}
@@ -247,6 +248,9 @@ var G;
 					G.setSky(G.getSelectedColor());
 					G.flashSky();
 					G.fadeSky();
+
+					//play an explosion sound!
+					G.playRandomExplosionSound();
 				}
 			});
 			//clean up spent shots
@@ -272,28 +276,74 @@ var G;
 				else if(entry.frameNum == 1){
 					var d = 2;
 					for(var i = 0; i < 2; i++){
-						PS.color(entry.x + d, entry.y + d, entry.color);
-						PS.color(entry.x + d, entry.y - d, entry.color);
-						PS.color(entry.x - d, entry.y + d, entry.color);
-						PS.color(entry.x - d, entry.y - d, entry.color);
-						PS.alpha(entry.x + d, entry.y + d, PS.ALPHA_OPAQUE);
-						PS.alpha(entry.x + d, entry.y - d, PS.ALPHA_OPAQUE);
-						PS.alpha(entry.x - d, entry.y + d, PS.ALPHA_OPAQUE);
-						PS.alpha(entry.x - d, entry.y - d, PS.ALPHA_OPAQUE);
+						G.drawFireworkBit(entry.x + d, entry.y + d, entry.color);
+						G.drawFireworkBit(entry.x + d, entry.y - d, entry.color);
+						G.drawFireworkBit(entry.x - d, entry.y + d, entry.color);
+						G.drawFireworkBit(entry.x - d, entry.y - d, entry.color);
+						//PS.alpha(entry.x + d, entry.y + d, PS.ALPHA_OPAQUE);
+						//PS.alpha(entry.x + d, entry.y - d, PS.ALPHA_OPAQUE);
+						//PS.alpha(entry.x - d, entry.y + d, PS.ALPHA_OPAQUE);
+						//PS.alpha(entry.x - d, entry.y - d, PS.ALPHA_OPAQUE);
 						d--;
 					}
 					PS.color(entry.x, entry.y, entry.color);
 					PS.alpha(entry.x, entry.y, PS.ALPHA_OPAQUE);
 				}
+				else if(entry.frameNum == 2){
+					var x = entry.x;
+					var y = entry.y;
+					G.drawFireworkBit(x, y, entry.color);
+					G.drawFireworkBit(x + 3, y, entry.color);
+					G.drawFireworkBit(x + 2, y + 2, entry.color);
+					G.drawFireworkBit(x, y + 3, entry.color);
+					G.drawFireworkBit(x - 2, y + 2, entry.color);
+					G.drawFireworkBit(x - 3, y, entry.color);
+					G.drawFireworkBit(x - 2, y - 2, entry.color);
+					G.drawFireworkBit(x, y - 3, entry.color);
+					G.drawFireworkBit(x + 2, y - 2, entry.color);
+				}
+				else if(entry.frameNum == 3){
+					var x = entry.x;
+					var y = entry.y;
+					G.drawFireworkBit(x, y, entry.color);
+					//G.drawFireworkBit(x + 1, y - 1, entry.color);
+					//G.drawFireworkBit(x, y - 2, entry.color);
+					//G.drawFireworkBit(x - 1, y - 1, entry.color);
+					G.drawFireworkBit(x - 1, y - 1, entry.color);
+					G.drawFireworkBit(x + 1, y - 1, entry.color);
+					G.drawFireworkBit(x - 1, y + 3, entry.color);
+					G.drawFireworkBit(x + 1, y + 3, entry.color);
+					G.drawFireworkBit(x - 2, y + 1, entry.color);
+					G.drawFireworkBit(x + 2, y + 1, entry.color);
+				}
 				entry.delay--;
-				if(entry.frameNum < 2) {
-					PS.debug("frame : " + entry.frameNum + ", delay : " + entry.delay + "\n");
+				if(entry.frameNum <= 3) {
+					//PS.debug("frame : " + entry.frameNum + ", delay : " + entry.delay + "\n");
+				}
+				if(entry.frameNum > 3){
+					G.FIREWORKS_TO_REMOVE.push(entry);
 				}
 				if(entry.delay < 1){
 					entry.frameNum += 1;
 					entry.delay = G.FIREWORKS_DELAY;
 				}
 			});
+			//delete old fireworks
+			G.FIREWORKS_TO_REMOVE.forEach(function(entry){
+				G.FIREWORKS.splice(G.FIREWORKS.indexOf(entry), 1);
+			});
+			G.FIREWORKS_TO_REMOVE = [];
+		},
+
+		drawFireworkBit : function(x, y, color){
+			if((x >= 0) && (x < G.width) && (y >= 0) && (y < 29)){
+				PS.color(x, y, color);
+				PS.alpha(x, y, PS.ALPHA_OPAQUE);
+			}
+		},
+
+		playRandomExplosionSound : function (){
+			PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
 		},
 
 		constructShot : function (newPath, newDestinationX, newDestinationY) {
@@ -534,7 +584,7 @@ PS.touch = function( x, y, data, options ) {
 		//G.flashSky();
 		//G.fadeSky();
 
-		PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
+		//PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
 
 	}
 

@@ -444,11 +444,11 @@ PS.init = function( system, options ) {
 	//Pre-load Audio
 	PS.audioLoad( "fx_blip",   { lock: true } );
 	PS.audioLoad( "fx_bloop",  { lock: true } );
-	PS.audioLoad( "fx_blast1", { lock: true } );
+
 	PS.audioLoad( "fx_blast2", { lock: true } );
 	PS.audioLoad( "fx_blast3", { lock: true } );
-	PS.audioLoad( "fx_blast4", { lock: true } );
-	// PS.audioLoad( "FW1", { lock: true } );
+
+
 
 	PS.timerStart(1, G.update);
 };
@@ -483,14 +483,21 @@ PS.touch = function( x, y, data, options ) {
 		G.flashSky();
 		G.fadeSky();
 
+		PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
+
 	}
 
 	//Audio
 
 	//PS.audioPlay( "fx_blip" ); // hovering between cannon colors
 	//PS.audioPlay( "fx_bloop" ); // selecting cannon color
-    //
-	PS.audioPlay( "FW1", { path : "" , fileTypes : [ "mp3", "wav" ] } ) ; //explosion variation 1
+
+
+	//PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
+	//PS.audioPlay( "fx_blast3" , { volume: 0.10 } ); //explosion variation 3
+
+
+	//PS.audioPlay( "FW1", { path : "" , fileTypes : [ "mp3", "wav" ] } ) ; //explosion variation 1
 	//PS.audioPlay( "FW2" ); //explosion variation 2
 	//PS.audioPlay( "FW3" ); //explosion variation 3
 	//PS.audioPlay( "FW4" ); //explosion variation 4

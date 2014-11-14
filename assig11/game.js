@@ -1,6 +1,21 @@
 // game.js for Perlenspiel 3.1
 //released to the public domain
 
+/**
+ *
+ *
+ *		Cromaworks
+ *
+ * 		Forth of July, all on your phone!
+ *
+ *
+ * 		By Team Zalen
+ * 		Sean Halloran
+ * 		Stone Cleven
+ *
+ *
+ **/
+
 /*
 Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
 Perlenspiel is Copyright © 2009-14 Worcester Polytechnic Institute.
@@ -20,13 +35,214 @@ You may have received a copy of the GNU Lesser General Public License
 along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-//Test comment!
-
 // The following comment lines are for JSLint. Don't remove them!
 
 /*jslint nomen: true, white: true */
 /*global PS */
+
+//Global namespace
+var myMath;
+
+// This self-invoking function initializes
+// the public namespace variable G,
+// and also encapsulates private variables
+// and functions
+( function () {
+	"use strict";
+
+	// This is where G is declared as an object,
+	// and its properties initialized
+
+	myMath = {
+
+		/**
+		 * Clamps a num between a min and max
+		 *
+		 * @param num
+		 * 	num to clamp
+		 * @param min
+		 * 	min, inclusive, the num can be
+		 * @param max
+		 * 	max, inclusive, the num can be
+		 * @returns {number}
+		 * 	the clamped num
+		 */
+		clamp : function(num, min, max) {
+			return (num < min) ? min : (num > max ? max : num);
+		},
+
+		/**
+		 * Clamps a number between 0 and 255 inclusive
+		 *
+		 * @param num
+		 * 		number to clamp
+		 * @returns {number}
+		 */
+		clamp255 : function(num){
+			return myMath.clamp(num, 0, 255);
+		},
+
+		weightedAverage : function(num1, num2, weight1, weight2){
+			var val = (num1 * weight1 + num2 * weight2) / (weight1 + weight2);
+			PS.debug(val + "\n");
+			return val;
+		}
+
+	};
+}());
+
+//Global namespace
+var G;
+
+// This self-invoking function initializes
+// the public namespace variable G,
+// and also encapsulates private variables
+// and functions
+( function () {
+	"use strict";
+
+	// This is where G is declared as an object,
+	// and its properties initialized
+
+	G = {
+
+		width : 8,
+		height : 8,
+
+		numBeads : function(){
+			return G.width * G.height;
+		},
+
+		//COLOR_GOOD : {r : 255, g : 255, b : 255},	//white
+		//COLOR_BAD :  {r : 0,   g : 0,   b : 0},		//black
+
+		COLOR_GOOD : {r : 255, g : 0, b : 0},	//white
+		COLOR_BAD :  {r : 0,   g : 0,   b : 255},		//black
+
+		//the last piano note played
+		lastNote : "piano_c6",
+
+		/**
+		 * Counts the number of solved beads
+		 *
+		 * @returns {number}
+		 * 		the number of white beads
+		 */
+		numSolved : function(){
+			var solved = 0;
+			for(var i = 0; i < G.width; i++)
+			{
+				for(var j = 0; j < G.height; j++)
+				{
+					if (G.beadSolved(i, j))
+					{
+						solved++;
+					}
+				}
+			}
+			return solved;
+		},
+
+		/**
+		 * A percentage of beads solved
+		 *
+		 * @returns {number}
+		 * 		percentage 0.00 - 1.00
+		 */
+		percentSolved : function(){
+			return G.numSolved() / G.numBeads();
+		},
+
+		/**
+		 * A percentage of beads unsolved
+		 *
+		 * @returns {number}
+		 * 		percentage 0.00 - 1.00
+		 */
+		percentUnsolved : function(){
+			return 1 - G.percentSolved();
+		},
+
+		/**
+		 * Check if a bead at (x,y) is solved
+		 *
+		 * @param x
+		 * 		x coordinate of bead
+		 * @param y
+		 * 		y coodinate of bead
+		 * @returns {boolean}
+		 * 		if bead is solved color
+		 */
+		beadSolved : function(x, y){
+			return PS.data(x, y).solved;
+		},
+
+		/**
+		 * Toggle a bead between solved and unsolved
+		 *
+		 * @param x
+		 * 		x coordinate of bead to toggle
+		 * @param y
+		 * 		y coordinate of bead to toggle
+		 */
+		toggleBead : function(x, y){
+			if(G.beadSolved(x, y)){
+				PS.data(x, y, {solved : false});
+				PS.color(x, y, G.COLOR_BAD);
+			}
+			else{
+				PS.data(x, y, {solved : true});
+				PS.color(x, y, G.COLOR_GOOD);
+			}
+		},
+
+		/**
+		 * Are all the beads solved?
+		 *
+		 * @returns {boolean}
+		 * 		if all the beads are solved
+		 */
+		allSolved : function(){
+			return G.numSolved() == G.numBeads();
+		},
+
+		/**
+		 * Update the background color
+		 */
+		updateBackgroundColor : function(){
+			//var colorVal = G.numSolved() * 255.0 / G.numBeads();
+			PS.debug("Num solved: "+ G.numSolved() + "\n");
+			var percentSolved = G.percentSolved();
+			PS.debug("Solved "+percentSolved + "\n");
+			var percentUnsolved = G.percentUnsolved();
+			PS.debug("Unsolved "+percentUnsolved + "\n");
+			var newColor = {r : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.r, G.COLOR_BAD.r, percentSolved, percentUnsolved)),
+							g : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.g, G.COLOR_BAD.g, percentSolved, percentUnsolved)),
+							b : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.b, G.COLOR_BAD.b, percentSolved, percentUnsolved))};
+			PS.debug("New bg color : " + newColor.r + " " + newColor.g + " " + newColor.b + "\n");
+			PS.gridColor(newColor);
+			var shadowColor = {r : myMath.clamp255(newColor.r + 50),
+							   g : myMath.clamp255(newColor.g + 50),
+							   b : myMath.clamp255(newColor.b + 50)};
+			PS.gridShadow(true, shadowColor);
+		},
+
+		playToggleSound : function (){
+			// Play alternating click sounds
+			if(G.lastNote == "piano_c6")
+			{
+				PS.audioPlay( "piano_c5" );
+				G.lastNote = "piano_c5";
+			}
+			else
+			{
+				PS.audioPlay( "piano_c6" );
+				G.lastNote = "piano_c6";
+			}
+		}
+
+	};
+}());
 
 // PS.init( system, options )
 // Initializes the game
@@ -34,6 +250,8 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 // where x and y are the desired initial dimensions of the grid
 // [system] = an object containing engine and platform information; see documentation for details
 // [options] = an object with optional parameters; see documentation for details
+// This variable creates a global namespace
+// for game-specific code and variables
 
 PS.init = function( system, options ) {
 	"use strict";
@@ -43,10 +261,11 @@ PS.init = function( system, options ) {
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
 
-	PS.gridSize( 8, 8 );
-	PS.gridColor( PS.COLOR_BLACK );
-	PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
+	PS.gridSize(G.width, G.height);
+	PS.gridColor(G.COLOR_BAD);
+	PS.color(PS.ALL, PS.ALL, G.COLOR_BAD);
 	PS.border(PS.ALL, PS.ALL, 0);
+	PS.applyRect(0, 0, G.width, G.height, PS.data, {solved : false});
 
 	PS.statusColor( PS.COLOR_RED );
 	PS.statusText( "Touch the screen" );
@@ -57,45 +276,6 @@ PS.init = function( system, options ) {
 	// Add any other initialization code you need here
 };
 
-/**
- * Counts the number of white beads
- *
- * @returns {number}
- * 	the number of white beads
- */
-var numWhite = function(){
-	var black = 0;
-	for(var i = 0; i < 8; i++)
-	{
-		for(var j = 0; j < 8; j++)
-		{
-			if ( PS.color(i, j) === PS.COLOR_WHITE )
-			{
-				black++;
-			}
-		}
-	}
-	return black;
-}
-
-/**
- * Clamps a num between a min and max
- *
- * @param num
- * 	num to clamp
- * @param min
- * 	min, inclusive, the num can be
- * @param max
- * 	max, inclusive, the num can be
- * @returns {*}
- * 	the clamped num
- */
-var clamp = function(num, min, max) {
-	return num < min ? min : (num > max ? max : num);
-};
-
-//the last piano note played
-var lastNote = "piano_c6";
 
 // PS.touch ( x, y, data, options )
 // Called when the mouse button is clicked on a bead, or when a bead is touched
@@ -109,38 +289,22 @@ PS.touch = function( x, y, data, options ) {
 	"use strict";
 
 	//toggle the clicked and adjacent beads
-	for(var i = clamp(x - 1, 0, 8); i < clamp(x + 2, 0, 8); i++)
+	for(var i = myMath.clamp(x - 1, 0, 8); i < myMath.clamp(x + 2, 0, 8); i++)
 	{
-		for(var j = clamp(y - 1, 0, 8); j < clamp(y + 2, 0, 8); j++)
+		for(var j = myMath.clamp(y - 1, 0, 8); j < myMath.clamp(y + 2, 0, 8); j++)
 		{
-			if ( PS.color(i, j) === PS.COLOR_BLACK ) {
-				PS.color(i, j, PS.COLOR_WHITE);
-			} else {
-				PS.color(i, j, PS.COLOR_BLACK);
-			}
+			G.toggleBead(i, j);
 		}
 	}
 
-	// Play alternating click sounds
-	if(lastNote == "piano_c6")
-	{
-		PS.audioPlay( "piano_c5" );
-		lastNote = "piano_c5";
-	}
-	else
-	{
-		PS.audioPlay( "piano_c6" );
-		lastNote = "piano_c6";
-	}
+	//Play a note
+	G.playToggleSound();
 
 	//Adjust the background color of the screen for how lit up the grid is
-	var colorVal = numWhite() * 3.984375;
-	PS.gridColor(colorVal, colorVal, colorVal);
-	var shadowVal = clamp(colorVal + 50, 0, 255);
-	PS.gridShadow(true, shadowVal, shadowVal, shadowVal);
+	G.updateBackgroundColor();
 
 	//play ta-da if the whole screen is lit up
-	if(numWhite() == 8*8)
+	if(G.allSolved())
 	{
 		PS.audioPlay("fx_tada");
 	}

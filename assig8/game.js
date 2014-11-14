@@ -1,6 +1,21 @@
 // game.js for Perlenspiel 3.1
 // This game is released to the public domain
 
+/**
+ *
+ *
+ *		Cromaworks
+ *
+ * 		Forth of July, all on your phone!
+ *
+ *
+ * 		By Team Zalen
+ * 		Sean Halloran
+ * 		Stone Cleven
+ *
+ *
+ **/
+
 /*
 Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
 Perlenspiel is Copyright © 2009-14 Worcester Polytechnic Institute.

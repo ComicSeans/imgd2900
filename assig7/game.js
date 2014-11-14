@@ -206,7 +206,7 @@ var G; // best to keep it very short
 		 *
 		 * @returns {string}
 		 */
-		getSelectedColor : function (){
+		getSelectedColorStr : function (){
 			var color = "";
 			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
 			if(sel_x >= PS.spriteMove(G.CANNON_SPR_SILVER).x){
@@ -390,7 +390,7 @@ PS.touch = function( x, y, data, options ) {
 			}
 		});
 		PS.radius(x, y, 50);
-		//G.setSky(G.getSelectedColor());
+		//G.setSky(G.getSelectedColorStr());
 	}
 	// Firework color code
 

@@ -27,7 +27,6 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 // This variable creates a global namespace
 // for game-specific code and variables
-
 //Global namespace
 var G;
 
@@ -35,7 +34,6 @@ var G;
 // the public namespace variable G,
 // and also encapsulates private variables
 // and functions
-
 ( function () {
 	"use strict";
 
@@ -55,7 +53,6 @@ var G;
 		SKY_COLOR_ORANGE  : { r : 21, g : 16, b : 0  },
 		SKY_COLOR_WHITE   : { r : 26, g : 26, b : 26 },
 		SKY_COLOR_SILVER  : { r : 21, g : 21, b : 21 },
-		//SKY_COLOR_DEFAULT : { r : 0,  g : 6,  b : 12 },	
 		SKY_COLOR_DEFAULT : { r : 0, g : 0, b : 0 },
 
 		//Planes
@@ -90,6 +87,8 @@ var G;
 
 		FIREWORKS_DELAY : 20,
 
+		gridShadowColor : { r : 0, g : 0, b : 0 },
+
 		initSky : function () {
 			//Make the sky black
 			PS.gridPlane(G.SKY_PLANE_BG);
@@ -103,6 +102,7 @@ var G;
 
 		},
 
+		//construct sprites for cannons
 		initSprites : function () {
 			G.CANNON_SPR_RED    = PS.spriteSolid(2, 3);
 			G.CANNON_SPR_BLUE   = PS.spriteSolid(2, 3);
@@ -146,6 +146,9 @@ var G;
 			PS.spriteMove(G.SELECTION_MARKER_SPR, 1, 31);
 		},
 
+		/**
+		 * set exec functions for cannons, to handle switching cannon selection
+		 */
 		initCannonExecFuncs : function () {
 			//for every cannon
 			for(var c = 0; c < 8; c++){
@@ -168,12 +171,170 @@ var G;
 			}
 		},
 
+		//for telling the update function what to do
 		UPDATE_FLAGS : {
 			FADE_SKY_GLOW : false,
 			FADE_SKY_FLASH : false
 		},
 
-		gridShadowColor : { r : 0, g : 0, b : 0 },
+		/**
+		 * Update function called every tick
+		 */
+		update : function () {
+			G.updateSkyGlow();
+			G.updateSkyFlash();
+			////////////////moveShots/////////////////////
+			G.SHOTS.forEach(G.updateShot);
+			//clean up spent shots
+			G.SHOTS_TO_REMOVE.forEach(function(entry){
+				PS.spriteDelete(entry.sprite);
+				G.SHOTS.splice(G.SHOTS.indexOf(entry), 1);
+			});
+			G.SHOTS_TO_REMOVE = [];
+
+			////////////////updateFireworks///////////////
+			//clear old fireworks drawn
+			PS.gridPlane(G.FIREWORKS_PLANE);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
+			//work on every firework
+			G.FIREWORKS.forEach(G.updateSingleFirework);
+			//delete old fireworks
+			G.FIREWORKS_TO_REMOVE.forEach(function(entry){
+				G.FIREWORKS.splice(G.FIREWORKS.indexOf(entry), 1);
+			});
+			G.FIREWORKS_TO_REMOVE = [];
+		},
+
+		/**
+		 * Draw and update firework
+		 *
+		 * @param fw
+		 * 		firework to update
+		 */
+		updateSingleFirework : function(fw){
+			//draw frame one
+			if(fw.frameNum == 0){
+				PS.color(fw.x, fw.y, fw.color);
+				PS.alpha(fw.x, fw.y, PS.ALPHA_OPAQUE);
+			}
+			else if(fw.frameNum == 1){
+				var d = 2;
+				for(var i = 0; i < 2; i++){
+					G.drawFireworkBit(fw.x + d, fw.y + d, fw.color);
+					G.drawFireworkBit(fw.x + d, fw.y - d, fw.color);
+					G.drawFireworkBit(fw.x - d, fw.y + d, fw.color);
+					G.drawFireworkBit(fw.x - d, fw.y - d, fw.color);
+					d--;
+				}
+				PS.color(fw.x, fw.y, fw.color);
+				PS.alpha(fw.x, fw.y, PS.ALPHA_OPAQUE);
+			}
+			else if(fw.frameNum == 2){
+				var x = fw.x;
+				var y = fw.y;
+				G.drawFireworkBit(x, y, fw.color);
+				G.drawFireworkBit(x + 3, y, fw.color);
+				G.drawFireworkBit(x + 2, y + 2, fw.color);
+				G.drawFireworkBit(x, y + 3, fw.color);
+				G.drawFireworkBit(x - 2, y + 2, fw.color);
+				G.drawFireworkBit(x - 3, y, fw.color);
+				G.drawFireworkBit(x - 2, y - 2, fw.color);
+				G.drawFireworkBit(x, y - 3, fw.color);
+				G.drawFireworkBit(x + 2, y - 2, fw.color);
+			}
+			else if(fw.frameNum == 3){
+				var x = fw.x;
+				var y = fw.y;
+				G.drawFireworkBit(x, y, fw.color);
+				G.drawFireworkBit(x - 1, y - 1, fw.color);
+				G.drawFireworkBit(x + 1, y - 1, fw.color);
+				G.drawFireworkBit(x - 1, y + 3, fw.color);
+				G.drawFireworkBit(x + 1, y + 3, fw.color);
+				G.drawFireworkBit(x - 2, y + 1, fw.color);
+				G.drawFireworkBit(x + 2, y + 1, fw.color);
+			}
+			fw.delay--;
+			if(fw.frameNum > 3){
+				G.FIREWORKS_TO_REMOVE.push(fw);
+			}
+			if(fw.delay < 1){
+				fw.frameNum += 1;
+				fw.delay = G.FIREWORKS_DELAY;
+			}
+		},
+
+		/**
+		 * Update the glow of the sky
+		 */
+		updateSkyGlow : function(){
+			if(G.UPDATE_FLAGS.FADE_SKY_GLOW){
+				PS.gridPlane(G.SKY_PLANE_GLOW);
+				var currentSkyAlpha = PS.alpha(1, 1);
+				if(currentSkyAlpha > 0) {
+					PS.alpha(PS.ALL, PS.ALL, currentSkyAlpha - 1);
+				}
+				else{
+					G.UPDATE_FLAGS.FADE_SKY_GLOW = false;
+				}
+			}
+		},
+
+		/**
+		 * Update the flash of the fireworks
+		 */
+		updateSkyFlash : function(){
+			if(G.UPDATE_FLAGS.FADE_SKY_FLASH)
+			{
+				//fade the sky
+				PS.gridPlane(G.SKY_PLANE_FLASH);
+				var currentFlashAlpha = PS.alpha(1, 1);
+				if(currentFlashAlpha > 0) {
+					//set the alpha of the flash grid layer
+					PS.alpha(PS.ALL, PS.ALL, currentFlashAlpha - 30);
+					//set the color of the grid shadow between white and black
+					G.setGridShadowColor({ r : G.gridShadowColor.r - 30,
+						g : G.gridShadowColor.g - 30,
+						b : G.gridShadowColor.b - 30});
+				}
+				else{
+					PS.gridShadow(true, PS.COLOR_BLACK);
+					G.UPDATE_FLAGS.FADE_SKY_FLASH = false;
+				}
+			}
+		},
+
+		/**
+		 * Move and explode shot
+		 *
+		 * @param s
+		 * 		shot to update
+		 */
+		updateShot : function(s){
+			var currShotPos = PS.spriteMove(s.sprite);
+			if(currShotPos.y > s.destinationY){
+				var newX = s.path[s.step][0];
+				var newY = s.path[s.step][1];
+				PS.spriteMove(s.sprite, newX, newY);
+				s.step++;
+			}
+			//explode!
+			else{
+				//mark for delete
+				G.SHOTS_TO_REMOVE.push(s);
+				PS.spriteSolidAlpha(s.sprite, PS.ALPHA_TRANSPARENT);
+
+				//make explosion
+				var color = G.getFireworksColor();
+				G.FIREWORKS.push(G.constructFirework(s.destinationX, s.destinationY, color));
+
+				//do sky coloring
+				G.flashSky();
+				G.illuminateSky();
+
+				//play an explosion sound!
+				G.playExplosionSound();
+			}
+		},
 
 		/**
 		 * Set the grid shadow and save it to a var in the game namespace.
@@ -185,156 +346,33 @@ var G;
 			PS.gridShadow(true, G.gridShadowColor);
 		},
 
+
 		/**
-		 * Update function called every tick
+		 * Launch a fireworks shot at a location from the selected cannon
+		 *
+		 * @param x
+		 * 		x coordinate to launch at
+		 * @param y
+		 * 		y coordinate to launch at
 		 */
-		update : function () {
-			//Update the glow of the sky
-			if(G.UPDATE_FLAGS.FADE_SKY_GLOW){
-				PS.gridPlane(G.SKY_PLANE_GLOW);
-				var currentSkyAlpha = PS.alpha(1, 1);
-				if(currentSkyAlpha > 0) {
-					//PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentSkyAlpha - 1) + "\n");
-					PS.alpha(PS.ALL, PS.ALL, currentSkyAlpha - 1);
-				}
-				else{
-					G.UPDATE_FLAGS.FADE_SKY_GLOW = false;
-					//PS.debug("Finished fading sky\n");
-				}
-			}
-			//Update the flash of the fireworks
-			if(G.UPDATE_FLAGS.FADE_SKY_FLASH)
-			{
-				PS.gridPlane(G.SKY_PLANE_FLASH);
-				var currentFlashAlpha = PS.alpha(1, 1);
-				if(currentFlashAlpha > 0) {
-					//set the alpha of the flash grid layer
-					//PS.debug("Sky color set to color " + PS.color(1, 1) + " alpha to " + (currentFlashAlpha - 30) + "\n");
-					PS.alpha(PS.ALL, PS.ALL, currentFlashAlpha - 30);
-					//set the color of the grid shadow between white and black
-					G.setGridShadowColor({ r : G.gridShadowColor.r - 30,
-										   g : G.gridShadowColor.g - 30,
-										   b : G.gridShadowColor.b - 30});
-					//PS.debug("grid shadow color is "+ G.gridShadowColor.r + " " + G.gridShadowColor.g + " " + G.gridShadowColor.b + "\n");
-				}
-				else{
-					PS.gridShadow(true, PS.COLOR_BLACK);
-					G.UPDATE_FLAGS.FADE_SKY_FLASH = false;
-					//PS.debug("Finished flashing the sky\n");
-				}
-			}
-			////////////////moveShots/////////////////////
-			G.SHOTS.forEach(function(entry){
-				var currShotPos = PS.spriteMove(entry.sprite);
-				//PS.debug("Shot at " +  + currShotPos.x + ", " + currShotPos.y +"\n");
-				if(currShotPos.y > entry.destinationY){
-					var newX = entry.path[entry.step][0];
-					var newY = entry.path[entry.step][1];
-					//PS.debug("Moving shot to " + newX + ", " + newY +"\n");
-					PS.spriteMove(entry.sprite, newX, newY);
-					entry.step++;
-				}
-				//explode!
-				else{
-					//mark for delete
-					G.SHOTS_TO_REMOVE.push(entry);
-					PS.spriteSolidAlpha(entry.sprite, PS.ALPHA_TRANSPARENT);
-
-					//make explosion
-					var color = G.getFireworksColor();
-					G.FIREWORKS.push(G.constructFirework(entry.destinationX, entry.destinationY, color));
-
-					//do sky coloring
-					G.setSky(G.getSelectedColor());
-					G.flashSky();
-					G.fadeSky();
-
-					//play an explosion sound!
-					G.playRandomExplosionSound();
-				}
-			});
-			//clean up spent shots
-			G.SHOTS_TO_REMOVE.forEach(function(entry){
-				PS.spriteDelete(entry.sprite);
-				G.SHOTS.splice(G.SHOTS.indexOf(entry), 1);
-			});
-			G.SHOTS_TO_REMOVE = [];
-
-			////////////////updateFireworks///////////////
-			//clear old fireworks
-			PS.gridPlane(G.FIREWORKS_PLANE);
-			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
-
-			//work on every firework
-			G.FIREWORKS.forEach(function(entry){
-				//draw frame one
-				//PS.debug("FW = "+entry.x+", "+entry.y+" delay of "+entry.delay+" frame : "+entry.frameNum+"\n");
-				if(entry.frameNum == 0){
-					PS.color(entry.x, entry.y, entry.color);
-					PS.alpha(entry.x, entry.y, PS.ALPHA_OPAQUE);
-				}
-				else if(entry.frameNum == 1){
-					var d = 2;
-					for(var i = 0; i < 2; i++){
-						G.drawFireworkBit(entry.x + d, entry.y + d, entry.color);
-						G.drawFireworkBit(entry.x + d, entry.y - d, entry.color);
-						G.drawFireworkBit(entry.x - d, entry.y + d, entry.color);
-						G.drawFireworkBit(entry.x - d, entry.y - d, entry.color);
-						//PS.alpha(entry.x + d, entry.y + d, PS.ALPHA_OPAQUE);
-						//PS.alpha(entry.x + d, entry.y - d, PS.ALPHA_OPAQUE);
-						//PS.alpha(entry.x - d, entry.y + d, PS.ALPHA_OPAQUE);
-						//PS.alpha(entry.x - d, entry.y - d, PS.ALPHA_OPAQUE);
-						d--;
-					}
-					PS.color(entry.x, entry.y, entry.color);
-					PS.alpha(entry.x, entry.y, PS.ALPHA_OPAQUE);
-				}
-				else if(entry.frameNum == 2){
-					var x = entry.x;
-					var y = entry.y;
-					G.drawFireworkBit(x, y, entry.color);
-					G.drawFireworkBit(x + 3, y, entry.color);
-					G.drawFireworkBit(x + 2, y + 2, entry.color);
-					G.drawFireworkBit(x, y + 3, entry.color);
-					G.drawFireworkBit(x - 2, y + 2, entry.color);
-					G.drawFireworkBit(x - 3, y, entry.color);
-					G.drawFireworkBit(x - 2, y - 2, entry.color);
-					G.drawFireworkBit(x, y - 3, entry.color);
-					G.drawFireworkBit(x + 2, y - 2, entry.color);
-				}
-				else if(entry.frameNum == 3){
-					var x = entry.x;
-					var y = entry.y;
-					G.drawFireworkBit(x, y, entry.color);
-					//G.drawFireworkBit(x + 1, y - 1, entry.color);
-					//G.drawFireworkBit(x, y - 2, entry.color);
-					//G.drawFireworkBit(x - 1, y - 1, entry.color);
-					G.drawFireworkBit(x - 1, y - 1, entry.color);
-					G.drawFireworkBit(x + 1, y - 1, entry.color);
-					G.drawFireworkBit(x - 1, y + 3, entry.color);
-					G.drawFireworkBit(x + 1, y + 3, entry.color);
-					G.drawFireworkBit(x - 2, y + 1, entry.color);
-					G.drawFireworkBit(x + 2, y + 1, entry.color);
-				}
-				entry.delay--;
-				if(entry.frameNum <= 3) {
-					//PS.debug("frame : " + entry.frameNum + ", delay : " + entry.delay + "\n");
-				}
-				if(entry.frameNum > 3){
-					G.FIREWORKS_TO_REMOVE.push(entry);
-				}
-				if(entry.delay < 1){
-					entry.frameNum += 1;
-					entry.delay = G.FIREWORKS_DELAY;
-				}
-			});
-			//delete old fireworks
-			G.FIREWORKS_TO_REMOVE.forEach(function(entry){
-				G.FIREWORKS.splice(G.FIREWORKS.indexOf(entry), 1);
-			});
-			G.FIREWORKS_TO_REMOVE = [];
+		launchShot : function(x, y){
+			var launchLocation = PS.spriteMove(G.SELECTION_MARKER_SPR);
+			launchLocation.y -= 3;
+			var path = PS.line(launchLocation.x, launchLocation.y, x, y);
+			G.SHOTS.push(G.constructShot(path, x, y));
 		},
 
+		/**
+		 * Draw a single bead of a firework by coloring a bead and
+		 * setting it to opaque.
+		 *
+		 * @param x
+		 * 		x coordinate of the bead
+		 * @param y
+		 * 		y coordinate of the bead
+		 * @param color
+		 * 		color to draw the beed
+		 */
 		drawFireworkBit : function(x, y, color){
 			if((x >= 0) && (x < G.width) && (y >= 0) && (y < 29)){
 				PS.color(x, y, color);
@@ -342,10 +380,20 @@ var G;
 			}
 		},
 
-		playRandomExplosionSound : function (){
+		/**
+		 * Play an explosion sound!
+		 */
+		playExplosionSound : function (){
 			PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
 		},
 
+		/**
+		 *
+		 * @param newPath
+		 * @param newDestinationX
+		 * @param newDestinationY
+		 * @returns {{path: *, destinationX: number, destinationY: number, sprite: sprite, step: number}}
+		 */
 		constructShot : function (newPath, newDestinationX, newDestinationY) {
 			var sprite = PS.spriteSolid(1, 1);
 			PS.spriteSolidColor(sprite, G.SHOT_COLOR);
@@ -360,14 +408,30 @@ var G;
 			};
 		},
 
+		/**
+		 *
+		 * @param newX
+		 * 		x coordinate for new firework
+		 * @param newY
+		 * 		y coordinate for new firework
+		 * @param newColor
+		 * @returns {{x: number, y: number, color: *, frameNum: number, delay: (number|G.FIREWORKS_DELAY)}}
+		 */
 		constructFirework : function (newX, newY, newColor) {
 			return {x : newX, y : newY, color : newColor, frameNum : 0, delay : G.FIREWORKS_DELAY};
 		},
 
-		fadeSky : function () {
+		/**
+		 * Tell the update function to illuminate the sky with the color of the selected firework
+		 */
+		illuminateSky : function () {
+			G.setSky(G.getSelectedColorStr());
 			G.UPDATE_FLAGS.FADE_SKY_GLOW = true;
 		},
 
+		/**
+		 * Flash the sky with a bright light!
+		 */
 		flashSky : function () {
 			PS.gridPlane(G.SKY_PLANE_FLASH);
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
@@ -416,7 +480,7 @@ var G;
 		 *
 		 * @returns {string}
 		 */
-		getSelectedColor : function (){
+		getSelectedColorStr : function (){
 			var color = "";
 			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
 			if(sel_x >= PS.spriteMove(G.CANNON_SPR_SILVER).x){
@@ -448,57 +512,47 @@ var G;
 		getFireworksColor : function () {
 			var color = {r : 0, g : 0, b : 0};
 			var sel_x = PS.spriteMove(G.SELECTION_MARKER_SPR).x;
-			//PS.debug("sel_x : "+ sel_x + "\n");
 			if(sel_x >= PS.spriteMove(G.CANNON_SPR_SILVER).x){
-				//PS.debug("SILVER");
 				// Silver Explosions
 				color.r = PS.random(36) + 189; // random red 190-225
 				color.g = PS.random(32) + 195; // random green 196-227
 				color.b = PS.random(83) + 172; // random blue 173-255
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_WHITE).x){
-				//PS.debug("WHITE");
 				// White Explosions
 				color.r = PS.random(41) + 214; // random red 215-255
 				color.g = PS.random(25) + 230; // random green 231-255
 				color.b = PS.random(41) + 214; // random blue 215-255
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_ORANGE).x){
-				//PS.debug("ORANGE");
 				// Orange Explosions
 				color.r = PS.random(26) + 229; // random red 230-255
 				color.g = PS.random(62) + 113; // random green 114-175
 				color.b = PS.random(91) - 1; // random blue 0-90
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_PURPLE).x){
-				//PS.debug("PURPLE");
 				// Purple Explosions
 				color.r = PS.random(79) + 85; // random red 86-164
 				color.g = PS.random(93) - 1; // random green 0-94
 				color.b = PS.random(101) + 91; // random blue 92-192
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_YELLOW).x){
-				//PS.debug("YELLOW");
 				// Yellow Explosions
 				color.r = PS.random(24) + 231; // random red 232-255
 				color.g = PS.random(48) + 207; // random green 208-255
 				color.b = PS.random(102) - 1; // random blue 0-101
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_GREEN).x){
-				//PS.debug("GREEN");
 				// Green Explosions
 				color.r = PS.random(129) - 1; // random red 0-128
 				color.g = PS.random(111) + 144; // random green 145-255
 				color.b = PS.random(51) + 81; // random blue 82-132
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_BLUE).x){
-				//PS.debug("BLUE");
 				// Blue Explosions
 				color.r = PS.random(88) + 54; // random red 55-142
 				color.g = PS.random(152) + 103; // random green 104-255
 				color.b = PS.random(78) + 177; // random blue 178-255
 			}else if(sel_x >= PS.spriteMove(G.CANNON_SPR_RED).x){
-				//PS.debug("RED");
 				// Red Explosions
 				color.r = PS.random(134) + 121; // random red 122-255
 				color.g = PS.random(9) + 17; // random green 18-26
 				color.b = PS.random(33) +41; // random blue 42-74
 			}
-			//PS.debug("\n");
 			return color;
 		}
 
@@ -564,46 +618,10 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	"use strict";
 
-	// Uncomment the following line to inspect parameters
-	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
-
 	//if clicking on the sky
 	if(y < 29) {
-
-		//create firework
-		//var color = G.getFireworksColor();
-		//G.FIREWORKS[0] = G.constructFirework(x, y, color);
-
-		var launchLocation = PS.spriteMove(G.SELECTION_MARKER_SPR);
-		launchLocation.y -= 3;
-		var path = PS.line(launchLocation.x, launchLocation.y, x, y);
-		G.SHOTS.push(G.constructShot(path, x, y));
-
-		//set the glow of the sky, and flash the sky
-		//G.setSky(G.getSelectedColor());
-		//G.flashSky();
-		//G.fadeSky();
-
-		//PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
-
+		G.launchShot(x, y);
 	}
-
-	//Audio
-
-	//PS.audioPlay( "fx_blip" ); // hovering between cannon colors
-	//PS.audioPlay( "fx_bloop" ); // selecting cannon color
-
-
-	//PS.audioPlay( "fx_blast2" , { volume: 0.10 } ); //explosion variation 2
-	//PS.audioPlay( "fx_blast3" , { volume: 0.10 } ); //explosion variation 3
-
-
-	//PS.audioPlay( "FW1", { path : "" , fileTypes : [ "mp3", "wav" ] } ) ; //explosion variation 1
-	//PS.audioPlay( "FW2" ); //explosion variation 2
-	//PS.audioPlay( "FW3" ); //explosion variation 3
-	//PS.audioPlay( "FW4" ); //explosion variation 4
-
-
 
 };
 

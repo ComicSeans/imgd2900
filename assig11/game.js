@@ -84,7 +84,6 @@ var myMath;
 
 		weightedAverage : function(num1, num2, weight1, weight2){
 			var val = (num1 * weight1 + num2 * weight2) / (weight1 + weight2);
-			PS.debug(val + "\n");
 			return val;
 		}
 
@@ -113,11 +112,11 @@ var G;
 			return G.width * G.height;
 		},
 
-		//COLOR_GOOD : {r : 255, g : 255, b : 255},	//white
-		//COLOR_BAD :  {r : 0,   g : 0,   b : 0},		//black
+		COLOR_GOOD : {r : 255, g : 255, b : 255},	//white
+		COLOR_BAD :  {r : 0,   g : 0,   b : 0},		//black
 
-		COLOR_GOOD : {r : 255, g : 0, b : 0},	//white
-		COLOR_BAD :  {r : 0,   g : 0,   b : 255},		//black
+		//COLOR_GOOD : {r : 255, g : 0, b : 0},
+		//COLOR_BAD :  {r : 0,   g : 0,   b : 255},
 
 		//the last piano note played
 		lastNote : "piano_c6",
@@ -187,11 +186,11 @@ var G;
 		 */
 		toggleBead : function(x, y){
 			if(G.beadSolved(x, y)){
-				PS.data(x, y, {solved : false});
+				PS.data(x, y, {solved : false, sound : true});
 				PS.color(x, y, G.COLOR_BAD);
 			}
 			else{
-				PS.data(x, y, {solved : true});
+				PS.data(x, y, {solved : true, sound: true});
 				PS.color(x, y, G.COLOR_GOOD);
 			}
 		},
@@ -211,15 +210,11 @@ var G;
 		 */
 		updateBackgroundColor : function(){
 			//var colorVal = G.numSolved() * 255.0 / G.numBeads();
-			PS.debug("Num solved: "+ G.numSolved() + "\n");
 			var percentSolved = G.percentSolved();
-			PS.debug("Solved "+percentSolved + "\n");
 			var percentUnsolved = G.percentUnsolved();
-			PS.debug("Unsolved "+percentUnsolved + "\n");
 			var newColor = {r : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.r, G.COLOR_BAD.r, percentSolved, percentUnsolved)),
 							g : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.g, G.COLOR_BAD.g, percentSolved, percentUnsolved)),
 							b : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.b, G.COLOR_BAD.b, percentSolved, percentUnsolved))};
-			PS.debug("New bg color : " + newColor.r + " " + newColor.g + " " + newColor.b + "\n");
 			PS.gridColor(newColor);
 			var shadowColor = {r : myMath.clamp255(newColor.r + 50),
 							   g : myMath.clamp255(newColor.g + 50),
@@ -239,6 +234,42 @@ var G;
 				PS.audioPlay( "piano_c6" );
 				G.lastNote = "piano_c6";
 			}
+		},
+
+		generatePuzzle : function (clicks){
+			var touches = [];
+			var x = PS.random(3) + (G.width  / 2) - 2;
+			var y = PS.random(3) + (G.height / 2) - 2;
+			touches.push({lx : x, ly : y});
+			PS.touch(x, y, {sound : false});
+			var dX, dY;
+			for(var i = 1; i < clicks; i++){
+				dX = PS.random(2) * ((PS.random(2) == 1) ? 1 : -1);
+				dY = PS.random(2) * ((PS.random(2) == 1) ? 1 : -1);
+				PS.debug("dx : "+dX+" dy: "+dY+"\n");
+				x = myMath.clamp(x + dX, 1, G.width - 2);
+				y = myMath.clamp(y + dY, 1, G.height - 2);
+				if(!G.touchMade(touches, {lx : x, ly : y})){
+					touches.push({lx : x, ly : y});
+					PS.touch(x, y, {sound : false});
+					//PS.debug("Touches so far! "+touches+"\n");
+				}
+				else{
+					i--;
+					PS.debug("Found same touch!\n");
+				}
+			}
+		},
+
+		touchMade : function (touches, touch){
+			var found = false;
+			touches.forEach(function(entry){
+				//PS.debug("comparing entry " + entry.lx + "," + entry.ly + " to touch "+touch.lx+","+touch.ly+"\n" );
+				if((entry.lx == touch.lx) && (entry.ly == touch.ly)){
+					found = true;
+				}
+			});
+			return found;
 		}
 
 	};
@@ -262,16 +293,30 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize(G.width, G.height);
-	PS.gridColor(G.COLOR_BAD);
-	PS.color(PS.ALL, PS.ALL, G.COLOR_BAD);
+	PS.gridColor(G.COLOR_GOOD);
+	PS.color(PS.ALL, PS.ALL, G.COLOR_GOOD);
 	PS.border(PS.ALL, PS.ALL, 0);
-	PS.applyRect(0, 0, G.width, G.height, PS.data, {solved : false});
+	PS.applyRect(0, 0, G.width, G.height, PS.data, {solved : true, sound : true});
 
 	PS.statusColor( PS.COLOR_RED );
 	PS.statusText( "Touch the screen" );
 
 	PS.audioLoad( "piano_c6", { lock: true } ); // load & lock click sound
 	PS.audioLoad( "piano_c5", { lock: true } ); // load & lock click sound
+
+	G.generatePuzzle(5);
+
+	//var touches = [];
+	//touches.push({lx : 1, ly : 1});
+	//touches.push({lx : 2, ly : 2});
+	//touches.push({lx : 1, ly : 1});
+    //
+	//if(G.touchMade(touches, {lx : 1, ly : 1})){
+	//	PS.debug("found it!");
+	//}
+	//else{
+	//	PS.debug("nope!");
+	//}
 
 	// Add any other initialization code you need here
 };
@@ -288,6 +333,11 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	"use strict";
 
+	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+
+	//x = myMath.clamp(x, 0, G.width);
+	//y = myMath.clamp(y, 0, G.height);
+
 	//toggle the clicked and adjacent beads
 	for(var i = myMath.clamp(x - 1, 0, 8); i < myMath.clamp(x + 2, 0, 8); i++)
 	{
@@ -298,7 +348,13 @@ PS.touch = function( x, y, data, options ) {
 	}
 
 	//Play a note
-	G.playToggleSound();
+	if(data.sound) {
+		PS.debug("Playing sound\n");
+		G.playToggleSound();
+	}
+	else{
+		PS.debug("Not playing sound\n");
+	}
 
 	//Adjust the background color of the screen for how lit up the grid is
 	G.updateBackgroundColor();
@@ -343,6 +399,9 @@ PS.enter = function( x, y, data, options ) {
 	// PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
 
 	// Add code here for when the mouse cursor/touch enters a bead
+
+	PS.alpha(x, y, PS.ALPHA_OPAQUE - 100);
+
 };
 
 // PS.exit ( x, y, data, options )
@@ -360,6 +419,7 @@ PS.exit = function( x, y, data, options ) {
 	// PS.debug( "PS.exit() @ " + x + ", " + y + "\n" );
 
 	// Add code here for when the mouse cursor/touch exits a bead
+	PS.alpha(x, y, PS.ALPHA_OPAQUE);
 };
 
 // PS.exitGrid ( options )

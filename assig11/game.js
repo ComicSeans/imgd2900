@@ -297,7 +297,7 @@ var G;
 				}
 				else{
 					i--;
-					PS.debug("Found same touch!\n");
+					//PS.debug("Found same touch!\n");
 				}
 			}
 			//PS.debug("Made board with touches :\n");

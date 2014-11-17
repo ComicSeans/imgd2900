@@ -240,6 +240,9 @@ var G;
 			PS.gridShadow(true, shadowColor);
 		},
 
+		/**
+		 * Play the next alternating sound for touching tiles
+		 */
 		playToggleSound : function (){
 			// Play alternating click sounds
 			if(G.lastNote == "piano_c6")
@@ -254,6 +257,9 @@ var G;
 			}
 		},
 
+		/**
+		 * Sets all the tiles to solved and puts board in default layout
+		 */
 		clearBoard : function(){
 			//PS.gridSize(G.width, G.height);
 			PS.gridColor(G.COLOR_GOOD);
@@ -417,6 +423,8 @@ PS.init = function( system, options ) {
 
 	PS.audioLoad( "piano_c6", { lock: true } ); // load & lock click sound
 	PS.audioLoad( "piano_c5", { lock: true } ); // load & lock click sound
+	//PS.audioLoad( "fx_tada", { lock: true } ); // load & lock click sound
+	//PS.audioLoad( "fx_wilhelm", { lock: true } ); // load & lock click sound
 
 	G.currentPuzzle = G.generatePuzzle(G.currentDifficulty);
 

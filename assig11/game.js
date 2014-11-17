@@ -255,7 +255,7 @@ var G;
 		},
 
 		clearBoard : function(){
-			PS.gridSize(G.width, G.height);
+			//PS.gridSize(G.width, G.height);
 			PS.gridColor(G.COLOR_GOOD);
 			PS.color(PS.ALL, PS.ALL, G.COLOR_GOOD);
 			PS.border(PS.ALL, PS.ALL, 0);
@@ -382,7 +382,15 @@ var G;
 		 */
 		updateStatusBar : function(){
 			PS.statusColor( PS.COLOR_RED );
-			PS.statusText("Click to solve in " + G.clicksRemaining + " clicks");
+			if(G.clicksRemaining > 1) {
+				PS.statusText("Reveal the light in " + G.clicksRemaining + " clicks");
+			}
+			else if(G.clicksRemaining > 0){
+				PS.statusText("Reveal the light in " + G.clicksRemaining + " click");
+			}
+			else{
+				PS.statusText("");
+			}
 		}
 
 	};
@@ -404,6 +412,8 @@ PS.init = function( system, options ) {
 	// the initial dimensions you want (32 x 32 maximum)
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
+
+	PS.gridSize(G.width, G.height);
 
 	PS.audioLoad( "piano_c6", { lock: true } ); // load & lock click sound
 	PS.audioLoad( "piano_c5", { lock: true } ); // load & lock click sound

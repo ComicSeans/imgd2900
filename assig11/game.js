@@ -4,9 +4,9 @@
 /**
  *
  *
- *		Cromaworks
+ *		Bright
  *
- * 		Forth of July, all on your phone!
+ * 		Move towards the light
  *
  *
  * 		By Team Zalen

@@ -4,9 +4,9 @@
 /**
  *
  *
- *		Cromaworks
+ *		Bright
  *
- * 		Forth of July, all on your phone!
+ * 		Move towards the light
  *
  *
  * 		By Team Zalen
@@ -264,7 +264,6 @@ var G;
 			//PS.gridSize(G.width, G.height);
 			PS.gridColor(G.COLOR_GOOD);
 			PS.color(PS.ALL, PS.ALL, G.COLOR_GOOD);
-			PS.border(PS.ALL, PS.ALL, 0);
 			PS.applyRect(0, 0, G.width, G.height, PS.data, {solved : true, sound : true});
 		},
 
@@ -371,16 +370,24 @@ var G;
 		/**
 		 * Called when player fails to solve in number of clicks
 		 */
-		onFailed : function(){
+		onFailed : function(sound){
 			//PS.debug("FAILED\n");
 			G.clicksRemaining = G.currentDifficulty;
-			G.soundFxPlaying = true;
-			PS.audioPlay("fx_wilhelm",
-				//play when 'wilhelm' finishes playing
-				{onEnd : function(){
-					G.soundFxPlaying = false;
-					G.generatePuzzleFromClicks(G.currentPuzzle);
-				}});
+			if(sound) {
+				G.soundFxPlaying = true;
+				PS.audioPlay("fx_wilhelm",
+					//play when 'wilhelm' finishes playing
+					{
+						onEnd: function () {
+							G.soundFxPlaying = false;
+							G.generatePuzzleFromClicks(G.currentPuzzle);
+						}
+					});
+			}
+			else
+			{
+				G.generatePuzzleFromClicks(G.currentPuzzle);
+			}
 		},
 
 		/**
@@ -420,24 +427,12 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize(G.width, G.height);
+	PS.border(PS.ALL, PS.ALL, 0);
 
 	PS.audioLoad( "piano_c6", { lock: true } ); // load & lock click sound
 	PS.audioLoad( "piano_c5", { lock: true } ); // load & lock click sound
-	//PS.audioLoad( "fx_tada", { lock: true } ); // load & lock click sound
-	//PS.audioLoad( "fx_wilhelm", { lock: true } ); // load & lock click sound
 
 	G.currentPuzzle = G.generatePuzzle(G.currentDifficulty);
-
-	//PS.debug("Made board with touches :\n");
-	//G.currentPuzzle.forEach(function(entry){
-	//	PS.debug(entry.lx + "," + entry.ly +"\n");
-	//});
-
-	//G.generatePuzzleFromClicks([
-	//	{lx : 3, ly : 3},
-	//	{lx : 5, ly : 5},
-	//	{lx : 6, ly : 6}
-	//])
 
 	// Add any other initialization code you need here
 };
@@ -470,15 +465,8 @@ PS.touch = function( x, y, data, options ) {
 		}
 	}
 
-	//Play a note
-	if(data.sound) {
-		G.playToggleSound();
-	}
-
 	//Adjust the background color of the screen for how lit up the grid is
 	G.updateBackgroundColor();
-
-
 
 	if(data.sound) {
 		G.clicksRemaining--;
@@ -490,7 +478,10 @@ PS.touch = function( x, y, data, options ) {
 			G.onSolved();
 		}
 		else if (G.clicksRemaining <= 0) {
-			G.onFailed();
+			G.onFailed(true);
+		}
+		else{
+			G.playToggleSound();
 		}
 	}
 };
@@ -576,6 +567,11 @@ PS.exitGrid = function( options ) {
 
 PS.keyDown = function( key, shift, ctrl, options ) {
 	"use strict";
+
+	if(key == 114) //if key == 'r'
+	{
+		G.onFailed(false);
+	}
 
 	// Uncomment the following line to inspect parameters
 	//	PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );

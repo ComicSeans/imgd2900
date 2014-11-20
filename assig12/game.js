@@ -396,10 +396,10 @@ var G;
 		updateStatusBar : function(){
 			PS.statusColor( PS.COLOR_RED );
 			if(G.clicksRemaining > 1) {
-				PS.statusText("Reveal the light in " + G.clicksRemaining + " clicks");
+				PS.statusText("Reveal the light in " + G.clicksRemaining + " clicks. Press r to reset.");
 			}
 			else if(G.clicksRemaining > 0){
-				PS.statusText("Reveal the light in " + G.clicksRemaining + " click");
+				PS.statusText("Reveal the light in " + G.clicksRemaining + " click. Press r to reset.");
 			}
 			else{
 				PS.statusText("");

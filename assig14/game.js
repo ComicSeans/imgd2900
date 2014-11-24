@@ -123,9 +123,6 @@ var G;
 		//color of unsolved tile
 		COLOR_BAD :  {r : 0,   g : 0,   b : 0},		//black
 
-		//COLOR_GOOD : {r : 255, g : 0, b : 0},
-		//COLOR_BAD :  {r : 0,   g : 0,   b : 255},
-
 		currentDifficulty : 1,
 		clicksRemaining : 1,
 
@@ -227,7 +224,6 @@ var G;
 		 * Update the background color
 		 */
 		updateBackgroundColor : function(){
-			//var colorVal = G.numSolved() * 255.0 / G.numBeads();
 			var percentSolved = G.percentSolved();
 			var percentUnsolved = G.percentUnsolved();
 			var newColor = {r : myMath.clamp255(myMath.weightedAverage(G.COLOR_GOOD.r, G.COLOR_BAD.r, percentSolved, percentUnsolved)),
@@ -277,8 +273,6 @@ var G;
 		 * 		return an array of touches which are {lx : number, ly : number}
 		 */
 		generatePuzzle : function (numClicks){
-			//PS.debug("===NEW PUZZLES FROM "+numClicks+" NUMBER CLICKS===\n");
-
 			G.clearBoard();
 
 			G.updateStatusBar();
@@ -292,23 +286,17 @@ var G;
 			for(var i = 1; i < numClicks; i++){
 				dX = PS.random(2) * ((PS.random(2) == 1) ? 1 : -1);
 				dY = PS.random(2) * ((PS.random(2) == 1) ? 1 : -1);
-				//PS.debug("dx : "+dX+" dy: "+dY+"\n");
 				x = myMath.clamp(x + dX, 1, G.width - 2);
 				y = myMath.clamp(y + dY, 1, G.height - 2);
 				if(!G.touchMade(touches, {lx : x, ly : y})){
 					touches.push({lx : x, ly : y});
 					PS.touch(x, y, {sound : false});
-					//PS.debug("Touches so far! "+touches+"\n");
 				}
 				else{
 					i--;
-					//PS.debug("Found same touch!\n");
 				}
 			}
-			//PS.debug("Made board with touches :\n");
-			//touches.forEach(function(entry){
-			//	PS.debug(entry.lx + "," + entry.ly +"\n");
-			//});
+
 			PS.gridRefresh();
 			return touches;
 		},
@@ -319,7 +307,6 @@ var G;
 		 * 		array of touches which are {lx : number, ly : number}
 		 */
 		generatePuzzleFromClicks : function(clicks){
-			//PS.debug("===RESETING PUZZLE FROM "+clicks.length+" CLICKS===\n");
 
 			G.clearBoard();
 
@@ -344,7 +331,6 @@ var G;
 		touchMade : function (touches, touch){
 			var found = false;
 			touches.forEach(function(entry){
-				//PS.debug("comparing entry " + entry.lx + "," + entry.ly + " to touch "+touch.lx+","+touch.ly+"\n" );
 				if((entry.lx == touch.lx) && (entry.ly == touch.ly)){
 					found = true;
 				}
@@ -356,12 +342,11 @@ var G;
 		 * Called when board is solved
 		 */
 		onSolved : function(){
-			//PS.debug("SOLVED\n");
 			G.currentDifficulty+= 1;
 			G.clicksRemaining = G.currentDifficulty;
 			G.soundFxPlaying = true;
 			PS.audioPlay("fx_tada",
-				//play when 'tada' finishes playing
+				//play when 'fx_tada' finishes playing
 				{onEnd : function(){
 					G.soundFxPlaying = false;
 					G.currentPuzzle = G.generatePuzzle(G.currentDifficulty);
@@ -372,12 +357,11 @@ var G;
 		 * Called when player fails to solve in number of clicks
 		 */
 		onFailed : function(sound){
-			//PS.debug("FAILED\n");
 			G.clicksRemaining = G.currentDifficulty;
 			if(sound) {
 				G.soundFxPlaying = true;
-				PS.audioPlay("fx_wilhelm",
-					//play when 'wilhelm' finishes playing
+				PS.audioPlay("perc_cowbell_low",
+					//play when 'perc_cowbell_low' finishes playing
 					{
 						onEnd: function () {
 							G.soundFxPlaying = false;

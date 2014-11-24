@@ -309,6 +309,7 @@ var G;
 			//touches.forEach(function(entry){
 			//	PS.debug(entry.lx + "," + entry.ly +"\n");
 			//});
+			PS.gridRefresh();
 			return touches;
 		},
 
@@ -327,7 +328,7 @@ var G;
 			clicks.forEach(function(entry){
 				PS.touch(entry.lx, entry.ly, {sound : false});
 			});
-
+			PS.gridRefresh();
 		},
 
 		/**

@@ -109,6 +109,23 @@ var G;
 
 		touchDown : false,
 
+		lastTouchLoc : {x : 0, y : 0},
+		lastExit : {x : 0, y : 0},
+
+		lastTouchTime : 0,
+
+		lastSwipeLength : 0,
+
+		COLOR_GRASS : { r : 33, g : 131, b : 90 },
+
+		dagger : {spr : null},
+
+		updateTimer : null,
+
+		PLANE_DAGGER : 3,
+		PLANE_EFFECTS : 2,
+
+
 		/**
 		 * calculates tbe number of beads on the grid
 		 *
@@ -117,6 +134,125 @@ var G;
 		 */
 		numBeads : function(){
 			return G.width * G.height;
+		},
+
+		outOfBounds : function(x, y){
+			if(x < 0 || y < 0) {
+				return true;
+			}
+			if(x >= G.width || y >= G.height){
+				return true;
+			}
+			return false;
+		},
+
+		//initSprites : function(){
+		//	G.SPR_DAGGER = PS.spriteSolid(1, 1);
+		//	PS.spriteSolidColor(G.SPR_DAGGER, PS.COLOR_GRAY_DARK);
+		//	PS.spriteMove(G.SPR_DAGGER, G.width / 2, G.height * 0.75);
+		//},
+
+		makeDagger : function(){
+			PS.debug("Making DAGGER!!!!!\n");
+
+			G.dagger.spr = PS.spriteSolid(1, 1);
+			PS.spritePlane(G.dagger.spr, G.PLANE_DAGGER);
+			PS.spriteSolidColor(G.dagger.spr, PS.COLOR_GRAY_DARK);
+			PS.spriteMove(G.dagger.spr, G.width / 2, G.height * 0.75);
+			G.dagger.moving = false;
+			G.dagger.path = [];
+			G.dagger.pathStep = 0;
+			G.dagger.pathDest = {x : 0, y : 0};
+			G.dagger.speed = 2;
+
+			G.dagger.getPosition = function(){
+				return PS.spriteMove(G.dagger.spr);
+			};
+
+			G.dagger.move = function (x, y){
+				//PS.debug("Moving dagger to " + x + ", " + y + "\n");
+				if(G.outOfBounds(x, y)){
+					PS.spriteDelete(G.dagger.spr);
+					G.makeDagger();
+				}
+				else{
+					PS.spriteMove(G.dagger.spr, x, y);
+				}
+			};
+
+			G.dagger.pathComplete = function(){
+				if(G.dagger.pathStep >= G.dagger.path.length){
+					return true;
+				}
+				return false;
+			};
+
+			G.dagger.setPath = function (path){
+				G.dagger.path = path;
+				G.dagger.pathDest = path[path.length - 2];
+			};
+
+			G.dagger.stepOnPath = function(){
+				G.dagger.pathStep += G.dagger.speed;
+				//PS.debug("On path step " + G.dagger.pathStep + " out of "+(G.dagger.path.length - 1)+"\n");
+				//G.dagger.pathStep = myMath.clamp(G.dagger.pathStep, 0, G.dagger.path.length - 1);
+				//if(G.dagger.moving) {
+				if(!G.dagger.pathComplete()) {
+					G.dagger.move(G.dagger.path[G.dagger.pathStep][0], G.dagger.path[G.dagger.pathStep][1]);
+				}
+				//}
+				var pos = G.dagger.getPosition();
+				if(G.dagger.pathComplete()){
+					//G.dagger.moving = false;
+					//PS.spriteDelete(G.dagger.spr);
+					//G.makeDagger();
+					var newPath = G.dagger.path;
+					if(newPath.length == 0)
+					{
+						return;
+					}
+					var daggerPos = G.dagger.getPosition();
+					newPath = G.translatePathStartToPosition(newPath, daggerPos.x, daggerPos.y);
+					G.dagger.setPath(newPath);
+					G.dagger.pathStep = 0;
+				}
+			};
+		},
+
+		makeTargets : function(){
+			var target = PS.spriteSolid(3, 3);
+			PS.spritePlane(target, 5);
+			PS.spriteSolidColor(target, PS.COLOR_RED);
+			PS.spriteMove(target, G.width / 2, G.height * 0.25);
+			PS.spriteCollide(target, function collide( s1, p1, s2, p2, type ) {
+				PS.statusText("Nice hit!");
+				G.makeDagger();
+			});
+		},
+
+		translatePathStartToPosition : function(path, x, y){
+			if(path.length == 0){
+				return;
+			}
+			var dx = x - path[0][0];
+			var dy = y - path[0][1];
+			for(var i = 0; i < path.length; i++){
+				path[i][0] += dx;
+				path[i][1] += dy;
+			}
+			return path;
+		},
+
+		update : function(){
+			G.updateDagger();
+		},
+
+		updateDagger : function(){
+			if(G.dagger.moving) {
+				G.dagger.stepOnPath();
+				//noinspection JSUnresolvedFunction
+				PS.gridRefresh();
+			}
 		}
 
 	};
@@ -140,8 +276,14 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize(G.width, G.height);
-	//PS.border(PS.ALL, PS.ALL, 0);
+	PS.color(PS.ALL, PS.ALL, G.COLOR_GRASS);
+	PS.border(PS.ALL, PS.ALL, 1);
+	PS.borderColor(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 
+	G.makeDagger();
+	G.makeTargets();
+
+	G.updateTimer = PS.timerStart(3, G.update);
 };
 
 
@@ -156,6 +298,11 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	"use strict";
 	G.touchDown = true;
+	G.lastTouchLoc.x = x;
+	G.lastTouchLoc.y = y;
+
+	var d = new Date();
+	G.lastTouchTime = d.getTime();
 
 	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
@@ -171,13 +318,47 @@ PS.touch = function( x, y, data, options ) {
 
 PS.release = function( x, y, data, options ) {
 	"use strict";
+	if(!G.touchDown){
+		G.touchDown = false;
+		return;
+	}
+
 	G.touchDown = false;
 
+	if(G.lastTouchLoc.x == x && G.lastTouchLoc.y == y){
+		return;
+	}
+
+	if(G.dagger.moving){
+		return;
+	}
+
+	var d = new Date();
+	var time = d.getTime();
+
+	PS.debug("Swipe Time : " + (time - G.lastTouchTime) + "\n");
+	PS.debug("Swipe speed : " + (time - G.lastTouchTime) / G.lastSwipeLength + "\n");
+
+	var path = PS.line(G.lastTouchLoc.x, G.lastTouchLoc.y, x, y);
+	var daggerPos = G.dagger.getPosition();
+	path = G.translatePathStartToPosition(path, daggerPos.x, daggerPos.y);
+
+
+	G.dagger.setPath(path);
+	G.dagger.moving = true;
+
+	PS.timerStop(G.updateTimer);
+	G.updateTimer = PS.timerStart(2, G.update);
+
+	PS.gridPlane(G.PLANE_EFFECTS);
+	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
 
 	// Uncomment the following line to inspect parameters
-	PS.debug( "PS.release() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.release() @ " + x + ", " + y + "\n" );
 
-	// Add code here for when the mouse button/touch is released over a bead
+
+
+
 };
 
 // PS.enter ( x, y, button, data, options )
@@ -196,9 +377,30 @@ PS.enter = function( x, y, data, options ) {
 		return;
 	}
 
+	if(!G.dagger.moving) {
+
+		PS.gridPlane(G.PLANE_EFFECTS);
+		PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
+
+		var effectPath = PS.line(G.lastTouchLoc.x, G.lastTouchLoc.y, x, y);
+
+		G.lastSwipeLength = effectPath.length;
+
+		var daggerPos = G.dagger.getPosition();
+		G.translatePathStartToPosition(effectPath, daggerPos.x, daggerPos.y);
+
+		for (var i = 0; i < effectPath.length; i++) {
+			var x = effectPath[i][0];
+			var y = effectPath[i][1];
+			if (!G.outOfBounds(x, y)) {
+				PS.color(x, y, PS.COLOR_MAGENTA);
+				PS.alpha(x, y, PS.ALPHA_OPAQUE);
+			}
+		}
+	}
 
 	// Uncomment the following line to inspect parameters
-	PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
 
 };
 
@@ -213,6 +415,9 @@ PS.enter = function( x, y, data, options ) {
 PS.exit = function( x, y, data, options ) {
 	"use strict";
 
+	G.lastExit.x = x;
+	G.lastExit.y = y;
+
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.exit() @ " + x + ", " + y + "\n" );
 
@@ -225,6 +430,10 @@ PS.exit = function( x, y, data, options ) {
 
 PS.exitGrid = function( options ) {
 	"use strict";
+
+	if(G.touchDown){
+		PS.release(G.lastExit.x, G.lastExit.y);
+	}
 
 	// Uncomment the following line to verify operation
 	// PS.debug( "PS.exitGrid() called\n" );

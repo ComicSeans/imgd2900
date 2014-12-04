@@ -198,7 +198,10 @@ var G;
 					G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
 				}
 				else{
-					G.dagger.speed = Math.round(speed);
+					G.dagger.speed = Math.floor(speed);
+					var SpeedFraction = speed - Math.floor(speed);
+					G.dagger.ticksBetweenMove = Math.round(1 / SpeedFraction);
+					G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
 				}
 			}
 
@@ -229,6 +232,7 @@ var G;
 			};
 
 			G.dagger.stepOnPath = function(){
+				//var old = G.dagger.pathStep;
 				if(G.dagger.speed < 1){
 					G.dagger.ticksUntilMove -= 1;
 					if(G.dagger.ticksUntilMove <= 0){
@@ -238,8 +242,13 @@ var G;
 				}
 				else{
 					G.dagger.pathStep += G.dagger.speed;
+					G.dagger.ticksUntilMove -= 1;
+					if(G.dagger.ticksUntilMove <= 0){
+						G.dagger.pathStep += 1;
+						G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
+					}
 				}
-
+				//PS.debug("Moving dagger "+(G.dagger.pathStep - old)+" steps\n");
 
 				//PS.debug("On path step " + G.dagger.pathStep + " out of "+(G.dagger.path.length - 1)+"\n");
 				//G.dagger.pathStep = myMath.clamp(G.dagger.pathStep, 0, G.dagger.path.length - 1);

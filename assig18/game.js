@@ -360,11 +360,21 @@ var G;
 		},
 
 		updateTargets : function(){
+			for(var i = 0; i < G.targets.length; i++){
+				G.updateTarget(G.targets[i]);
+			}
 			G.cleanupTargets();
+			if(G.targets.length == 0){
+				G.makeTargets();
+			}
 		},
 
 		updateTarget : function(target){
-
+			var pos = PS.spriteMove(target.spr);
+			var x = pos.x;
+			var y = pos.y;
+			x = (x + 1) % G.width;
+			PS.spriteMove(target.spr, x, y);
 		},
 
 		cleanupTargets : function(){
@@ -401,6 +411,8 @@ PS.init = function( system, options ) {
 	// the initial dimensions you want (32 x 32 maximum)
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
+
+	PS.statusText("Swipe the dagger at the targets.");
 
 	PS.gridSize(G.width, G.height);
 	PS.gridPlane(G.PLANE_BG);
@@ -488,7 +500,7 @@ PS.release = function( x, y, data, options ) {
 
 	var minSwipeSpeed = 0.05;
 	var maxSwipeSpeed = 0.2;
-	if(swipeSpeed > minSwipeSpeed && swpiteLength < 13) {
+	if(swipeSpeed > minSwipeSpeed && swpiteLength < 14) {
 		var daggerSpeed = myMath.clamp(swipeSpeed, minSwipeSpeed, maxSwipeSpeed);
 		daggerSpeed = myMath.map(daggerSpeed, minSwipeSpeed, maxSwipeSpeed, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
 		PS.debug("Dagger speed : " + daggerSpeed + "\n");

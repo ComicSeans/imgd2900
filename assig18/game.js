@@ -282,11 +282,11 @@ var G;
 			//G.makeTarget(25, 5);
 
 			for(var i = 1; i < 6; i++){
-				G.makeTarget(G.width / 6 * i, 3 + ((i * 2) % 7));
+				G.makeTarget(G.width / 6 * i, 3 + ((i * 2) % 7), 0.5);
 			}
 		},
 
-		makeTarget : function(x, y){
+		makeTarget : function(x, y, speed){
 			var target = {spr : null, id : 0};
 			target.spr = PS.spriteSolid(3, 3);
 			G.nextID++;
@@ -296,6 +296,18 @@ var G;
 			PS.spritePlane(target.spr, 5);
 			PS.spriteSolidColor(target.spr, PS.COLOR_RED);
 
+			target.speed = 1;
+			target.ticksBetweenMove = 0;
+			target.ticksUntilMove = 0;
+
+			target.speed = speed;
+			if(speed < 1){
+				target.ticksBetweenMove = Math.round(1 / speed);
+				target.ticksUntilMove = target.ticksBetweenMove;
+			}
+			else{
+				target.speed = Math.round(speed);
+			}
 
 			PS.spriteCollide(target.spr, function collide( s1, p1, s2, p2, type ) {
 				//for(var i = 0; i < G.targets.length; i++){
@@ -373,8 +385,21 @@ var G;
 			var pos = PS.spriteMove(target.spr);
 			var x = pos.x;
 			var y = pos.y;
-			x = (x + 1) % G.width;
+
+			if(target.speed < 1){
+				target.ticksUntilMove -= 1;
+				if(target.ticksUntilMove <= 0){
+					x += 1;
+					target.ticksUntilMove = target.ticksBetweenMove;
+				}
+			}
+			else{
+				x += target.speed;
+			}
+
+			x = (x + target.speed) % G.width;
 			PS.spriteMove(target.spr, x, y);
+
 		},
 
 		cleanupTargets : function(){
@@ -476,11 +501,11 @@ PS.release = function( x, y, data, options ) {
 
 	var dx = x - G.lastTouchLoc.x;
 	var dy = y - G.lastTouchLoc.y;
-	var swpiteLength = Math.sqrt(dx*dx + dy*dy);
+	var swipeLength = Math.sqrt(dx*dx + dy*dy);
 
 	var d = new Date();
 	var time = d.getTime();
-	var swipeSpeed = swpiteLength / (time - G.lastTouchTime);
+	var swipeSpeed = swipeLength / (time - G.lastTouchTime);
 
 	PS.debug("Swipe speed : " + swipeSpeed  + "\n");
 
@@ -496,11 +521,11 @@ PS.release = function( x, y, data, options ) {
 	var daggerPos = G.dagger.getPosition();
 	path = G.translatePathStartToPosition(path, daggerPos.x, daggerPos.y);
 
-	PS.debug("Swipe Length: " + swpiteLength + "\n");
+	PS.debug("Swipe Length: " + swipeLength + "\n");
 
 	var minSwipeSpeed = 0.05;
 	var maxSwipeSpeed = 0.2;
-	if(swipeSpeed > minSwipeSpeed && swpiteLength < 14) {
+	if(swipeSpeed > minSwipeSpeed) {
 		var daggerSpeed = myMath.clamp(swipeSpeed, minSwipeSpeed, maxSwipeSpeed);
 		daggerSpeed = myMath.map(daggerSpeed, minSwipeSpeed, maxSwipeSpeed, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
 		PS.debug("Dagger speed : " + daggerSpeed + "\n");

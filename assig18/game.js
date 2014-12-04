@@ -149,6 +149,8 @@ var G;
 		DAGGER_MAX_SPEED : 4,
 		DAGGER_MIN_SPEED : 0.25,
 
+		targetSpeed : 0.5,
+
 		/**
 		 * calculates tbe number of beads on the grid
 		 *
@@ -276,7 +278,7 @@ var G;
 			};
 		},
 
-		makeTargets : function(){
+		makeTargets : function(speed){
 			//var target = PS.spriteSolid(3, 3);
 			//PS.spritePlane(target, 5);
 			//PS.spriteSolidColor(target, PS.COLOR_RED);
@@ -292,7 +294,7 @@ var G;
 			//G.makeTarget(25, 5);
 
 			for(var i = 1; i < 6; i++){
-				G.makeTarget(G.width / 6 * i, 3 + ((i * 2) % 7), 0.5);
+				G.makeTarget(G.width / 6 * i, 3 + ((i * 2) % 7), speed);
 			}
 		},
 
@@ -389,7 +391,7 @@ var G;
 			}
 			G.cleanupTargets();
 			if(G.targets.length == 0){
-				G.makeTargets();
+				G.makeTargets(G.targetSpeed);
 			}
 		},
 
@@ -414,7 +416,7 @@ var G;
 				PS.alpha(x, y, PS.ALPHA_OPAQUE);
 				PS.color(x, y, PS.COLOR_WHITE);
 			}
-			
+
 			x = (x + target.speed) % G.width;
 			PS.spriteMove(target.spr, x, y);
 
@@ -464,8 +466,11 @@ PS.init = function( system, options ) {
 	PS.border(PS.ALL, PS.ALL, 0);
 	PS.borderColor(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 
+	PS.gridShadow(true, PS.COLOR_GRAY_DARK);
+
 	G.makeDagger();
-	G.makeTargets();
+	G.makeTargets(G.targetSpeed);
+
 
 	G.updateTimer = PS.timerStart(2, G.update);
 };

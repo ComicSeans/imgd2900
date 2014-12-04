@@ -84,6 +84,20 @@ var myMath;
 		weightedAverage : function(num1, num2, weight1, weight2){
 			var val = (num1 * weight1 + num2 * weight2) / (weight1 + weight2);
 			return val;
+		},
+
+		/**
+		 * Maps a value from one range to between another range
+		 * @param x
+		 * @param in_min
+		 * @param in_max
+		 * @param out_min
+		 * @param out_max
+		 * @returns {number}
+		 */
+		map : function long(x, in_min, in_max, out_min, out_max)
+		{
+			return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 		}
 
 	};
@@ -125,6 +139,8 @@ var G;
 		PLANE_DAGGER : 3,
 		PLANE_EFFECTS : 2,
 
+		DAGGER_MAX_SPEED : 4,
+		DAGGER_MIN_SPEED : 0.25,
 
 		/**
 		 * calculates tbe number of beads on the grid
@@ -153,8 +169,10 @@ var G;
 		//},
 
 		makeDagger : function(){
-			PS.debug("Making DAGGER!!!!!\n");
-
+			//PS.debug("Making DAGGER!!!!!\n");
+			if(G.dagger.spr != null) {
+				PS.spriteDelete(G.dagger.spr);
+			}
 			G.dagger.spr = PS.spriteSolid(1, 1);
 			PS.spritePlane(G.dagger.spr, G.PLANE_DAGGER);
 			PS.spriteSolidColor(G.dagger.spr, PS.COLOR_GRAY_DARK);
@@ -164,6 +182,19 @@ var G;
 			G.dagger.pathStep = 0;
 			G.dagger.pathDest = {x : 0, y : 0};
 			G.dagger.speed = 2;
+			G.dagger.ticksBetweenMove = 0;
+			G.dagger.ticksUntilMove = 0;
+
+			G.dagger.setSpeed = function(speed){
+				G.dagger.speed = speed;
+				if(speed < 1){
+					G.dagger.ticksBetweenMove = Math.round(1 / speed);
+					G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
+				}
+				else{
+					G.dagger.speed = Math.round(speed);
+				}
+			}
 
 			G.dagger.getPosition = function(){
 				return PS.spriteMove(G.dagger.spr);
@@ -172,7 +203,6 @@ var G;
 			G.dagger.move = function (x, y){
 				//PS.debug("Moving dagger to " + x + ", " + y + "\n");
 				if(G.outOfBounds(x, y)){
-					PS.spriteDelete(G.dagger.spr);
 					G.makeDagger();
 				}
 				else{
@@ -193,7 +223,18 @@ var G;
 			};
 
 			G.dagger.stepOnPath = function(){
-				G.dagger.pathStep += G.dagger.speed;
+				if(G.dagger.speed < 1){
+					G.dagger.ticksUntilMove -= 1;
+					if(G.dagger.ticksUntilMove <= 0){
+						G.dagger.pathStep += 1;
+						G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
+					}
+				}
+				else{
+					G.dagger.pathStep += G.dagger.speed;
+				}
+
+
 				//PS.debug("On path step " + G.dagger.pathStep + " out of "+(G.dagger.path.length - 1)+"\n");
 				//G.dagger.pathStep = myMath.clamp(G.dagger.pathStep, 0, G.dagger.path.length - 1);
 				//if(G.dagger.moving) {
@@ -283,7 +324,7 @@ PS.init = function( system, options ) {
 	G.makeDagger();
 	G.makeTargets();
 
-	G.updateTimer = PS.timerStart(3, G.update);
+	G.updateTimer = PS.timerStart(2, G.update);
 };
 
 
@@ -333,22 +374,36 @@ PS.release = function( x, y, data, options ) {
 		return;
 	}
 
+	var dx = x - G.lastTouchLoc.x;
+	var dy = y - G.lastTouchLoc.y;
+	var swpiteLength = Math.sqrt(dx*dx + dy*dy);
+
 	var d = new Date();
 	var time = d.getTime();
+	var swipeSpeed = swpiteLength / (time - G.lastTouchTime);
 
-	PS.debug("Swipe Time : " + (time - G.lastTouchTime) + "\n");
-	PS.debug("Swipe speed : " + (time - G.lastTouchTime) / G.lastSwipeLength + "\n");
+	PS.debug("Swipe speed : " + swipeSpeed  + "\n");
 
-	var path = PS.line(G.lastTouchLoc.x, G.lastTouchLoc.y, x, y);
+	//find path target
+	var xTar = x;
+	var yTar = y;
+	while(!G.outOfBounds(xTar, yTar)){
+		xTar += dx;
+		yTar += dy;
+	}
+
+	var path = PS.line(G.lastTouchLoc.x, G.lastTouchLoc.y, xTar, yTar);
 	var daggerPos = G.dagger.getPosition();
 	path = G.translatePathStartToPosition(path, daggerPos.x, daggerPos.y);
 
+	var daggerSpeed = myMath.clamp(swipeSpeed, 0.05, 0.2);
+	daggerSpeed = myMath.map(daggerSpeed, 0.05, 0.2, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
+	PS.debug("Dagger speed : " + daggerSpeed  + "\n");
+	G.dagger.setSpeed(daggerSpeed);
 
 	G.dagger.setPath(path);
 	G.dagger.moving = true;
 
-	PS.timerStop(G.updateTimer);
-	G.updateTimer = PS.timerStart(2, G.update);
 
 	PS.gridPlane(G.PLANE_EFFECTS);
 	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);

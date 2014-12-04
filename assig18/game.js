@@ -327,7 +327,7 @@ var G;
 				//}
 				//G.targets.splice(i, 1);
 				//PS.spriteDelete(sprDelete);
-				PS.debug("S1 : "+PS.spriteMove(s1).x+","+PS.spriteMove(s1).y+"\n");
+				//PS.debug("S1 : "+PS.spriteMove(s1).x+","+PS.spriteMove(s1).y+"\n");
 
 				var targetHit;
 				var posHit = PS.spriteMove( s1 );
@@ -470,7 +470,7 @@ PS.touch = function( x, y, data, options ) {
 	var d = new Date();
 	G.lastTouchTime = d.getTime();
 
-	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
 };
 
@@ -507,7 +507,7 @@ PS.release = function( x, y, data, options ) {
 	var time = d.getTime();
 	var swipeSpeed = swipeLength / (time - G.lastTouchTime);
 
-	PS.debug("Swipe speed : " + swipeSpeed  + "\n");
+	//PS.debug("Swipe speed : " + swipeSpeed  + "\n");
 
 	//find path target
 	var xTar = x;
@@ -521,14 +521,14 @@ PS.release = function( x, y, data, options ) {
 	var daggerPos = G.dagger.getPosition();
 	path = G.translatePathStartToPosition(path, daggerPos.x, daggerPos.y);
 
-	PS.debug("Swipe Length: " + swipeLength + "\n");
+	//PS.debug("Swipe Length: " + swipeLength + "\n");
 
 	var minSwipeSpeed = 0.05;
 	var maxSwipeSpeed = 0.2;
 	if(swipeSpeed > minSwipeSpeed) {
 		var daggerSpeed = myMath.clamp(swipeSpeed, minSwipeSpeed, maxSwipeSpeed);
 		daggerSpeed = myMath.map(daggerSpeed, minSwipeSpeed, maxSwipeSpeed, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
-		PS.debug("Dagger speed : " + daggerSpeed + "\n");
+		//PS.debug("Dagger speed : " + daggerSpeed + "\n");
 		G.dagger.setSpeed(daggerSpeed);
 
 		G.dagger.setPath(path);

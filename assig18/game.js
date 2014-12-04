@@ -118,8 +118,10 @@ var G;
 
 	G = {
 
-		width : 24,
+		width : 28,
 		height : 32,
+
+		nextID : 0,
 
 		touchDown : false,
 
@@ -134,10 +136,14 @@ var G;
 
 		dagger : {spr : null},
 
+		targets : [],
+		targetsToDelete : [],
+
 		updateTimer : null,
 
 		PLANE_DAGGER : 3,
 		PLANE_EFFECTS : 2,
+		PLANE_BG : 1,
 
 		DAGGER_MAX_SPEED : 4,
 		DAGGER_MIN_SPEED : 0.25,
@@ -176,7 +182,7 @@ var G;
 			G.dagger.spr = PS.spriteSolid(1, 1);
 			PS.spritePlane(G.dagger.spr, G.PLANE_DAGGER);
 			PS.spriteSolidColor(G.dagger.spr, PS.COLOR_GRAY_DARK);
-			PS.spriteMove(G.dagger.spr, G.width / 2, G.height * 0.75);
+			PS.spriteMove(G.dagger.spr, G.width / 2, G.height - 5);
 			G.dagger.moving = false;
 			G.dagger.path = [];
 			G.dagger.pathStep = 0;
@@ -261,14 +267,70 @@ var G;
 		},
 
 		makeTargets : function(){
-			var target = PS.spriteSolid(3, 3);
-			PS.spritePlane(target, 5);
-			PS.spriteSolidColor(target, PS.COLOR_RED);
-			PS.spriteMove(target, G.width / 2, G.height * 0.25);
-			PS.spriteCollide(target, function collide( s1, p1, s2, p2, type ) {
-				PS.statusText("Nice hit!");
+			//var target = PS.spriteSolid(3, 3);
+			//PS.spritePlane(target, 5);
+			//PS.spriteSolidColor(target, PS.COLOR_RED);
+			//PS.spriteMove(target, G.width / 2, G.height * 0.25);
+			//PS.spriteCollide(target, function collide( s1, p1, s2, p2, type ) {
+			//	PS.statusText("Nice hit!");
+			//	G.makeDagger();
+			//});
+
+			//G.makeTarget(5, 5);
+			//G.makeTarget(15, 5);
+			//G.makeTarget(20, 5);
+			//G.makeTarget(25, 5);
+
+			for(var i = 1; i < 6; i++){
+				G.makeTarget(G.width / 6 * i, 3 + ((i * 2) % 7));
+			}
+		},
+
+		makeTarget : function(x, y){
+			var target = {spr : null, id : 0};
+			target.spr = PS.spriteSolid(3, 3);
+			G.nextID++;
+			target.id = G.nextID;
+			PS.spriteAxis(target.spr, 1, 1);
+			PS.spriteMove(target.spr, x, y);
+			PS.spritePlane(target.spr, 5);
+			PS.spriteSolidColor(target.spr, PS.COLOR_RED);
+
+
+			PS.spriteCollide(target.spr, function collide( s1, p1, s2, p2, type ) {
+				//for(var i = 0; i < G.targets.length; i++){
+				//	if((G.targets[i].spr == s1) || (G.targets[i].spr == s2)){
+				//		G.targets.splice(i, 1);
+				//		PS.spriteDelete(G.targets[i].spr);
+				//		G.makeDagger();
+				//		return;
+				//	}
+				//}
+				//var sprDelete;
+				//if(PS.spriteSolidColor(s1) == PS.COLOR_RED){
+				//	sprDelete = s1;
+				//}
+				//else if(PS.spriteSolidColor(s2) == PS.COLOR_RED) {
+				//	sprDelete = s2;
+				//}
+				//G.targets.splice(i, 1);
+				//PS.spriteDelete(sprDelete);
+				PS.debug("S1 : "+PS.spriteMove(s1).x+","+PS.spriteMove(s1).y+"\n");
+
+				var targetHit;
+				var posHit = PS.spriteMove( s1 );
+				for(var i = 0; i < G.targets.length; i++){
+					var pos = PS.spriteMove( G.targets[i].spr );
+					if((pos.x == posHit.x) && (pos.y == posHit.y)){
+						targetHit = G.targets[i];
+					}
+				}
+
+				G.targetsToDelete.push(targetHit);
 				G.makeDagger();
 			});
+
+			G.targets.push(target);
 		},
 
 		translatePathStartToPosition : function(path, x, y){
@@ -286,6 +348,7 @@ var G;
 
 		update : function(){
 			G.updateDagger();
+			G.updateTargets();
 		},
 
 		updateDagger : function(){
@@ -294,6 +357,29 @@ var G;
 				//noinspection JSUnresolvedFunction
 				PS.gridRefresh();
 			}
+		},
+
+		updateTargets : function(){
+			G.cleanupTargets();
+		},
+
+		updateTarget : function(target){
+
+		},
+
+		cleanupTargets : function(){
+			for(var i = 0; i < G.targetsToDelete.length; i++){
+				for(var j = 0; j < G.targets.length; j++){
+					if(G.targets[j].id == G.targetsToDelete[i].id ){
+						G.targets.splice(j, 1);
+						PS.spriteDelete(G.targetsToDelete[i].spr);
+					}
+				}
+			}
+			G.targetsToDelete = [];
+			PS.gridPlane(G.PLANE_BG);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+			PS.color(PS.ALL, PS.ALL, G.COLOR_GRASS);
 		}
 
 	};
@@ -317,8 +403,10 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize(G.width, G.height);
+	PS.gridPlane(G.PLANE_BG);
+	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
 	PS.color(PS.ALL, PS.ALL, G.COLOR_GRASS);
-	PS.border(PS.ALL, PS.ALL, 1);
+	PS.border(PS.ALL, PS.ALL, 0);
 	PS.borderColor(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 
 	G.makeDagger();
@@ -396,14 +484,19 @@ PS.release = function( x, y, data, options ) {
 	var daggerPos = G.dagger.getPosition();
 	path = G.translatePathStartToPosition(path, daggerPos.x, daggerPos.y);
 
-	var daggerSpeed = myMath.clamp(swipeSpeed, 0.05, 0.2);
-	daggerSpeed = myMath.map(daggerSpeed, 0.05, 0.2, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
-	PS.debug("Dagger speed : " + daggerSpeed  + "\n");
-	G.dagger.setSpeed(daggerSpeed);
+	PS.debug("Swipe Length: " + swpiteLength + "\n");
 
-	G.dagger.setPath(path);
-	G.dagger.moving = true;
+	var minSwipeSpeed = 0.05;
+	var maxSwipeSpeed = 0.2;
+	if(swipeSpeed > minSwipeSpeed && swpiteLength < 13) {
+		var daggerSpeed = myMath.clamp(swipeSpeed, minSwipeSpeed, maxSwipeSpeed);
+		daggerSpeed = myMath.map(daggerSpeed, minSwipeSpeed, maxSwipeSpeed, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
+		PS.debug("Dagger speed : " + daggerSpeed + "\n");
+		G.dagger.setSpeed(daggerSpeed);
 
+		G.dagger.setPath(path);
+		G.dagger.moving = true;
+	}
 
 	PS.gridPlane(G.PLANE_EFFECTS);
 	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
@@ -441,17 +534,17 @@ PS.enter = function( x, y, data, options ) {
 
 		G.lastSwipeLength = effectPath.length;
 
-		var daggerPos = G.dagger.getPosition();
-		G.translatePathStartToPosition(effectPath, daggerPos.x, daggerPos.y);
-
-		for (var i = 0; i < effectPath.length; i++) {
-			var x = effectPath[i][0];
-			var y = effectPath[i][1];
-			if (!G.outOfBounds(x, y)) {
-				PS.color(x, y, PS.COLOR_MAGENTA);
-				PS.alpha(x, y, PS.ALPHA_OPAQUE);
-			}
-		}
+		//var daggerPos = G.dagger.getPosition();
+		//G.translatePathStartToPosition(effectPath, daggerPos.x, daggerPos.y);
+        //
+		//for (var i = 0; i < effectPath.length; i++) {
+		//	var x = effectPath[i][0];
+		//	var y = effectPath[i][1];
+		//	if (!G.outOfBounds(x, y)) {
+		//		PS.color(x, y, PS.COLOR_MAGENTA);
+		//		PS.alpha(x, y, PS.ALPHA_OPAQUE);
+		//	}
+		//}
 	}
 
 	// Uncomment the following line to inspect parameters

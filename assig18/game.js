@@ -144,6 +144,7 @@ var G;
 		PLANE_DAGGER : 3,
 		PLANE_EFFECTS : 2,
 		PLANE_BG : 1,
+		PLANE_TARGETS : 5,
 
 		DAGGER_MAX_SPEED : 4,
 		DAGGER_MIN_SPEED : 0.25,
@@ -302,7 +303,7 @@ var G;
 			target.id = G.nextID;
 			PS.spriteAxis(target.spr, 1, 1);
 			PS.spriteMove(target.spr, x, y);
-			PS.spritePlane(target.spr, 5);
+			PS.spritePlane(target.spr, G.PLANE_TARGETS);
 			PS.spriteSolidColor(target.spr, PS.COLOR_RED);
 
 			target.speed = 1;
@@ -381,6 +382,8 @@ var G;
 		},
 
 		updateTargets : function(){
+			PS.gridPlane(G.PLANE_TARGETS + 1);
+			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
 			for(var i = 0; i < G.targets.length; i++){
 				G.updateTarget(G.targets[i]);
 			}
@@ -406,6 +409,12 @@ var G;
 				x += target.speed;
 			}
 
+			if(!G.outOfBounds(x, y)) {
+				PS.gridPlane(G.PLANE_TARGETS + 1);
+				PS.alpha(x, y, PS.ALPHA_OPAQUE);
+				PS.color(x, y, PS.COLOR_WHITE);
+			}
+			
 			x = (x + target.speed) % G.width;
 			PS.spriteMove(target.spr, x, y);
 

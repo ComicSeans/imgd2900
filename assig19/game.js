@@ -555,6 +555,8 @@ PS.init = function( system, options ) {
 	PS.color(PS.ALL, PS.ALL, G.COLOR_GRASS);
 	PS.border(PS.ALL, PS.ALL, 0);
 	PS.borderColor(PS.ALL, PS.ALL, PS.COLOR_WHITE);
+	PS.gridColor(PS.COLOR_GRAY_LIGHT);
+
 
 	PS.gridShadow(true, PS.COLOR_GRAY_DARK);
 

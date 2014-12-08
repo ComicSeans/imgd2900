@@ -82,8 +82,7 @@ var myMath;
 		},
 
 		weightedAverage : function(num1, num2, weight1, weight2){
-			var val = (num1 * weight1 + num2 * weight2) / (weight1 + weight2);
-			return val;
+			return (num1 * weight1 + num2 * weight2) / (weight1 + weight2);
 		},
 
 		/**
@@ -121,6 +120,8 @@ var G;
 		width : 28,
 		height : 32,
 
+		score : 0,
+
 		nextID : 0,
 
 		touchDown : false,
@@ -134,10 +135,13 @@ var G;
 
 		COLOR_GRASS : { r : 33, g : 131, b : 90 },
 
-		dagger : {spr : null},
-
 		targets : [],
 		targetsToDelete : [],
+
+		daggers : [],
+		daggersToDelete : [],
+
+		lastTimeDaggerThrown : 0,
 
 		updateTimer : null,
 
@@ -162,13 +166,7 @@ var G;
 		},
 
 		outOfBounds : function(x, y){
-			if(x < 0 || y < 0) {
-				return true;
-			}
-			if(x >= G.width || y >= G.height){
-				return true;
-			}
-			return false;
+			return x < 0 || y < 0 ? true : !!(x >= G.width || y >= G.height);
 		},
 
 		//initSprites : function(){
@@ -178,102 +176,104 @@ var G;
 		//},
 
 		makeDagger : function(){
-			//PS.debug("Making DAGGER!!!!!\n");
-			if(G.dagger.spr != null) {
-				PS.spriteDelete(G.dagger.spr);
-			}
-			G.dagger.spr = PS.spriteSolid(1, 1);
-			PS.spritePlane(G.dagger.spr, G.PLANE_DAGGER);
-			PS.spriteSolidColor(G.dagger.spr, PS.COLOR_GRAY_DARK);
-			PS.spriteMove(G.dagger.spr, G.width / 2, G.height - 5);
-			G.dagger.moving = false;
-			G.dagger.path = [];
-			G.dagger.pathStep = 0;
-			G.dagger.pathDest = {x : 0, y : 0};
-			G.dagger.speed = 2;
-			G.dagger.ticksBetweenMove = 0;
-			G.dagger.ticksUntilMove = 0;
+			var dagger = {id : 0};
+			//if(G.dagger.spr != null) {
+			//	PS.spriteDelete(G.dagger.spr);
+			//}
+			dagger.spr = PS.spriteSolid(1, 1);
+			PS.spritePlane(dagger.spr, G.PLANE_DAGGER);
+			PS.spriteSolidColor(dagger.spr, PS.COLOR_GRAY_DARK);
+			PS.spriteMove(dagger.spr, G.width / 2, G.height - 5);
+			dagger.moving = false;
+			dagger.path = [];
+			dagger.pathStep = 0;
+			dagger.pathDest = {x : 0, y : 0};
+			dagger.speed = 2;
+			dagger.ticksBetweenMove = 0;
+			dagger.ticksUntilMove = 0;
+			G.nextID++;
+			dagger.id = G.nextID;
 
-			G.dagger.setSpeed = function(speed){
-				G.dagger.speed = speed;
+			dagger.setSpeed = function(speed){
+				dagger.speed = speed;
 				if(speed < 1){
-					G.dagger.ticksBetweenMove = Math.round(1 / speed);
-					G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
+					dagger.ticksBetweenMove = Math.round(1 / speed);
+					dagger.ticksUntilMove = dagger.ticksBetweenMove;
 				}
 				else{
-					G.dagger.speed = Math.floor(speed);
+					dagger.speed = Math.floor(speed);
 					var SpeedFraction = speed - Math.floor(speed);
-					G.dagger.ticksBetweenMove = Math.round(1 / SpeedFraction);
-					G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
+					dagger.ticksBetweenMove = Math.round(1 / SpeedFraction);
+					dagger.ticksUntilMove = dagger.ticksBetweenMove;
 				}
-			}
-
-			G.dagger.getPosition = function(){
-				return PS.spriteMove(G.dagger.spr);
 			};
 
-			G.dagger.move = function (x, y){
+			dagger.getPosition = function(){
+				return PS.spriteMove(dagger.spr);
+			};
+
+			dagger.move = function (x, y){
 				//PS.debug("Moving dagger to " + x + ", " + y + "\n");
-				if(G.outOfBounds(x, y)){
-					G.makeDagger();
-				}
-				else{
-					PS.spriteMove(G.dagger.spr, x, y);
-				}
-			};
-
-			G.dagger.pathComplete = function(){
-				return G.dagger.pathStep >= G.dagger.path.length;
-
-			};
-
-			G.dagger.setPath = function (path){
-				G.dagger.path = path;
-				G.dagger.pathDest = path[path.length - 2];
-			};
-
-			G.dagger.stepOnPath = function(){
-				//var old = G.dagger.pathStep;
-				if(G.dagger.speed < 1){
-					G.dagger.ticksUntilMove -= 1;
-					if(G.dagger.ticksUntilMove <= 0){
-						G.dagger.pathStep += 1;
-						G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
-					}
-				}
-				else{
-					G.dagger.pathStep += G.dagger.speed;
-					G.dagger.ticksUntilMove -= 1;
-					if(G.dagger.ticksUntilMove <= 0){
-						G.dagger.pathStep += 1;
-						G.dagger.ticksUntilMove = G.dagger.ticksBetweenMove;
-					}
-				}
-				//PS.debug("Moving dagger "+(G.dagger.pathStep - old)+" steps\n");
-
-				//PS.debug("On path step " + G.dagger.pathStep + " out of "+(G.dagger.path.length - 1)+"\n");
-				//G.dagger.pathStep = myMath.clamp(G.dagger.pathStep, 0, G.dagger.path.length - 1);
-				//if(G.dagger.moving) {
-				if(!G.dagger.pathComplete()) {
-					G.dagger.move(G.dagger.path[G.dagger.pathStep][0], G.dagger.path[G.dagger.pathStep][1]);
-				}
+				//if(G.outOfBounds(x, y)){
+				//	//G.makeDagger();
 				//}
-				var pos = G.dagger.getPosition();
-				if(G.dagger.pathComplete()){
-					//G.dagger.moving = false;
-					//PS.spriteDelete(G.dagger.spr);
-					//G.makeDagger();
-					var newPath = G.dagger.path;
+				//else{
+				//	//PS.spriteMove(dagger.spr, x, y);
+				//}
+				if(dagger.spr != null) {
+					PS.spriteMove(dagger.spr, x, y);
+				}
+			};
+
+			dagger.pathComplete = function(){
+				return dagger.pathStep >= dagger.path.length;
+
+			};
+
+			dagger.setPath = function (path){
+				dagger.path = path;
+				dagger.pathDest = path[path.length - 2];
+			};
+
+			dagger.stepOnPath = function(){
+				//PS.debug("Step on path!");
+				if(dagger.speed < 1){
+					dagger.ticksUntilMove -= 1;
+					if(dagger.ticksUntilMove <= 0){
+						dagger.pathStep += 1;
+						dagger.ticksUntilMove = dagger.ticksBetweenMove;
+					}
+				}
+				else{
+					dagger.pathStep += dagger.speed;
+					dagger.ticksUntilMove -= 1;
+					if(dagger.ticksUntilMove <= 0){
+						dagger.pathStep += 1;
+						dagger.ticksUntilMove = dagger.ticksBetweenMove;
+					}
+				}
+				if(!dagger.pathComplete()) {
+					dagger.move(dagger.path[dagger.pathStep][0], dagger.path[dagger.pathStep][1]);
+				}
+				var pos = dagger.getPosition();
+				if(dagger.pathComplete()){
+					var newPath = dagger.path;
 					if(newPath.length == 0)
 					{
 						return;
 					}
-					var daggerPos = G.dagger.getPosition();
+					var daggerPos = dagger.getPosition();
 					newPath = G.translatePathStartToPosition(newPath, daggerPos.x, daggerPos.y);
-					G.dagger.setPath(newPath);
-					G.dagger.pathStep = 0;
+					dagger.setPath(newPath);
+					dagger.pathStep = 0;
 				}
 			};
+			PS.spriteCollide(dagger.spr, function(s1, p1, s2, p2, type){
+				//PS.debug("dagger deleting hit!"+dagger.id+"\n");
+				G.daggersToDelete.push(dagger);
+			});
+
+			G.daggers.push(dagger);
 		},
 
 		makeTargets : function(speed){
@@ -292,7 +292,7 @@ var G;
 			//G.makeTarget(25, 5);
 
 			for(var i = 1; i < 6; i++){
-				G.makeTarget(G.width / 6 * i, 3 + ((i * 2) % 7), speed);
+				G.makeTarget(G.width / 6 * i, 1 + ((i * 2) % 7), speed);
 			}
 		},
 
@@ -320,25 +320,10 @@ var G;
 			}
 
 			PS.spriteCollide(target.spr, function collide( s1, p1, s2, p2, type ) {
-				//for(var i = 0; i < G.targets.length; i++){
-				//	if((G.targets[i].spr == s1) || (G.targets[i].spr == s2)){
-				//		G.targets.splice(i, 1);
-				//		PS.spriteDelete(G.targets[i].spr);
-				//		G.makeDagger();
-				//		return;
-				//	}
-				//}
-				//var sprDelete;
-				//if(PS.spriteSolidColor(s1) == PS.COLOR_RED){
-				//	sprDelete = s1;
-				//}
-				//else if(PS.spriteSolidColor(s2) == PS.COLOR_RED) {
-				//	sprDelete = s2;
-				//}
-				//G.targets.splice(i, 1);
-				//PS.spriteDelete(sprDelete);
-				//PS.debug("S1 : "+PS.spriteMove(s1).x+","+PS.spriteMove(s1).y+"\n");
-
+				//PS.debug("HIT!!!!\n");
+				G.playTargetHitSound();
+				G.score += 100;
+				G.setScore(G.score);
 				var targetHit;
 				var posHit = PS.spriteMove( s1 );
 				for(var i = 0; i < G.targets.length; i++){
@@ -347,12 +332,42 @@ var G;
 						targetHit = G.targets[i];
 					}
 				}
-
+				//var daggerHit;
+				//var daggerPosHit = PS.spriteMove( s2 );
+				//for(var j = 0; j < G.daggers.length; j++){
+				//	var dpos = PS.spriteMove( G.daggers[j].spr );
+				//	if((dpos.x == daggerPosHit.x) && (dpos.y == daggerPosHit.y)){
+				//		daggerHit = G.daggers[j];
+				//	}
+				//}
 				G.targetsToDelete.push(targetHit);
-				G.makeDagger();
+				//G.daggersToDelete.push(daggerHit);
+				//if(!G.isDaggerAtSpawn()) {
+				//	G.makeDagger();
+				//}
 			});
 
 			G.targets.push(target);
+		},
+
+		isDaggerAtSpawn : function(){
+			for(var i = 0; i < G.daggers.length; i++){
+				var pos = PS.spriteMove(G.daggers[i].spr);
+				if((pos.x == (G.width / 2)) && (pos.y == (G.height - 5))){
+					return true;
+				}
+			}
+			return false;
+		},
+
+		getDaggerAtSpawn : function(){
+			for(var i = 0; i < G.daggers.length; i++){
+				var pos = PS.spriteMove(G.daggers[i].spr);
+				if((pos.x == (G.width / 2)) && (pos.y == (G.height - 5))){
+					return G.daggers[i];
+				}
+			}
+			return null;
 		},
 
 		translatePathStartToPosition : function(path, x, y){
@@ -369,16 +384,46 @@ var G;
 		},
 
 		update : function(){
-			G.updateDagger();
+			G.updateDaggers();
 			G.updateTargets();
 		},
 
-		updateDagger : function(){
-			if(G.dagger.moving) {
-				G.dagger.stepOnPath();
-				//noinspection JSUnresolvedFunction
+		updateDaggers : function(){
+			for(var i = 0; i < G.daggers.length; i++){
+				G.updateDagger(G.daggers[i]);
+			}
+			G.cleanupDaggers();
+			var d = new Date();
+			var t = d.getTime();
+			if(!G.isDaggerAtSpawn() && t - G.lastTimeDaggerThrown > 150){
+				G.makeDagger();
+			}
+		},
+
+		updateDagger : function(dagger){
+			if(dagger.moving) {
+				//PS.debug("Updating moving dagger "+dagger.id+" \n");
+				dagger.stepOnPath();
 				PS.gridRefresh();
 			}
+		},
+
+		cleanupDaggers : function(){
+			//for(var i = 0; i < G.daggersToDelete.length; i++){
+			//	PS.debug("gotta delete dagger "+G.daggersToDelete[i].id+"\n");
+			//	for(var j = 0; i < G.daggers.length; j++){
+			//		//var id1 = G.daggersToDelete[i].id;
+			//		//var id2 = G.daggers[j].id;
+			//		////var pos1 = PS.spriteMove(G.daggersToDelete[i].spr);
+			//		////var pos2 = PS.spriteMove(G.daggers[j].spr);
+			//		//if(id1 == id2){
+			//		////if(pos1.x == pos2.x && pos1.y == pos2.y){
+			//		////	PS.spriteDelete(G.daggersToDelete[i].spr);
+			//		////	G.daggers.splice(j, 1);
+			//		//}
+			//	}
+			//}
+			//G.targetsToDelete = [];
 		},
 
 		updateTargets : function(){
@@ -389,6 +434,11 @@ var G;
 			}
 			G.cleanupTargets();
 			if(G.targets.length == 0){
+				G.daggers.forEach(function(entry){
+					PS.spriteDelete(entry.spr);
+				});
+				G.daggers = [];
+				G.makeDagger();
 				G.makeTargets(G.targetSpeed);
 			}
 		},
@@ -433,6 +483,48 @@ var G;
 			PS.gridPlane(G.PLANE_BG);
 			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
 			PS.color(PS.ALL, PS.ALL, G.COLOR_GRASS);
+		},
+
+		makeMusicOptions : function(isMusic) {
+			var path = document.location.pathname;
+			var dir = "audio/";
+			var musicOptions;
+
+			if (isMusic) {
+				musicOptions = {
+					volume: 0.5,
+					loop: true,
+					lock: true,
+					path: dir,
+					fileTypes: ["mp3", "wav"]
+				};
+			}
+			else {
+				musicOptions = {
+					volume: 0.25,
+					loop: false,
+					lock: true,
+					path: dir,
+					fileTypes: ["mp3", "wav"]
+				};
+			}
+
+			return musicOptions;
+		},
+
+		playDaggerThrowSound : function(){
+			PS.audioPlay("Dagger_Throw", G.makeMusicOptions(false));
+		},
+
+		playTargetHitSound : function(){
+			PS.audioPlay("Target_Destroy", G.makeMusicOptions(false));
+		},
+
+		setScore : function(score){
+			var str = score.toString();
+			for(var i = 0; i < str.length; i++){
+				PS.glyph(i, G.height - 1, str[i]);
+			}
 		}
 
 	};
@@ -469,6 +561,10 @@ PS.init = function( system, options ) {
 	G.makeDagger();
 	G.makeTargets(G.targetSpeed);
 
+	PS.audioLoad("Target_Destroy", G.makeMusicOptions(false));
+	PS.audioLoad("Dagger_Throw", G.makeMusicOptions(false));
+
+	G.setScore(G.score);
 
 	G.updateTimer = PS.timerStart(2, G.update);
 };
@@ -516,7 +612,13 @@ PS.release = function( x, y, data, options ) {
 		return;
 	}
 
-	if(G.dagger.moving){
+	var dagger = G.getDaggerAtSpawn();
+
+	if(dagger == null){
+		return;
+	}
+
+	if(dagger.moving){
 		return;
 	}
 
@@ -539,7 +641,7 @@ PS.release = function( x, y, data, options ) {
 	}
 
 	var path = PS.line(G.lastTouchLoc.x, G.lastTouchLoc.y, xTar, yTar);
-	var daggerPos = G.dagger.getPosition();
+	var daggerPos = dagger.getPosition();
 	path = G.translatePathStartToPosition(path, daggerPos.x, daggerPos.y);
 
 	//PS.debug("Swipe Length: " + swipeLength + "\n");
@@ -547,13 +649,16 @@ PS.release = function( x, y, data, options ) {
 	var minSwipeSpeed = 0.05;
 	var maxSwipeSpeed = 0.2;
 	if(swipeSpeed > minSwipeSpeed) {
+		//PS.debug("Thowing dagger!\n");
+		G.playDaggerThrowSound();
+		G.lastTimeDaggerThrown = time;
 		var daggerSpeed = myMath.clamp(swipeSpeed, minSwipeSpeed, maxSwipeSpeed);
 		daggerSpeed = myMath.map(daggerSpeed, minSwipeSpeed, maxSwipeSpeed, G.DAGGER_MIN_SPEED, G.DAGGER_MAX_SPEED);
 		//PS.debug("Dagger speed : " + daggerSpeed + "\n");
-		G.dagger.setSpeed(daggerSpeed);
+		dagger.setSpeed(daggerSpeed);
 
-		G.dagger.setPath(path);
-		G.dagger.moving = true;
+		dagger.setPath(path);
+		dagger.moving = true;
 	}
 
 	PS.gridPlane(G.PLANE_EFFECTS);
@@ -578,10 +683,10 @@ PS.release = function( x, y, data, options ) {
 PS.enter = function( x, y, data, options ) {
 	"use strict";
 	//ignore this function unless a finger is on the screen
-	if(!G.touchDown)
-	{
-		return;
-	}
+	//if(!G.touchDown)
+	//{
+	//	return;
+	//}
     //
 	//if(!G.dagger.moving) {
     //

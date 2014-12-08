@@ -528,7 +528,7 @@ PS.release = function( x, y, data, options ) {
 	var time = d.getTime();
 	var swipeSpeed = swipeLength / (time - G.lastTouchTime);
 
-	//PS.debug("Swipe speed : " + swipeSpeed  + "\n");
+	PS.debug("Swipe speed : " + swipeSpeed  + "\n");
 
 	//find path target
 	var xTar = x;
@@ -623,6 +623,13 @@ PS.exit = function( x, y, data, options ) {
 
 	G.lastExit.x = x;
 	G.lastExit.y = y;
+
+	if(G.lastTouchLoc.x == x && G.lastTouchLoc.y == y)
+	{
+		var d = new Date();
+		G.lastTouchTime = d.getTime();
+		PS.debug("time recorded!!!");
+	}
 
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.exit() @ " + x + ", " + y + "\n" );

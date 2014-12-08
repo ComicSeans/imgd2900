@@ -130,7 +130,7 @@ var G;
 
 		lastTouchTime : 0,
 
-		lastSwipeLength : 0,
+		//lastSwipeLength : 0,
 
 		COLOR_GRASS : { r : 33, g : 131, b : 90 },
 
@@ -491,7 +491,7 @@ PS.touch = function( x, y, data, options ) {
 	var d = new Date();
 	G.lastTouchTime = d.getTime();
 
-	PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
 };
 
@@ -528,7 +528,7 @@ PS.release = function( x, y, data, options ) {
 	var time = d.getTime();
 	var swipeSpeed = swipeLength / (time - G.lastTouchTime);
 
-	PS.debug("Swipe speed : " + swipeSpeed  + "\n");
+	//PS.debug("Swipe speed : " + swipeSpeed  + "\n");
 
 	//find path target
 	var xTar = x;
@@ -582,31 +582,16 @@ PS.enter = function( x, y, data, options ) {
 	{
 		return;
 	}
-
-	if(!G.dagger.moving) {
-
-		PS.gridPlane(G.PLANE_EFFECTS);
-		PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
-
-		var effectPath = PS.line(G.lastTouchLoc.x, G.lastTouchLoc.y, x, y);
-
-		G.lastSwipeLength = effectPath.length;
-
-		//var daggerPos = G.dagger.getPosition();
-		//G.translatePathStartToPosition(effectPath, daggerPos.x, daggerPos.y);
-        //
-		//for (var i = 0; i < effectPath.length; i++) {
-		//	var x = effectPath[i][0];
-		//	var y = effectPath[i][1];
-		//	if (!G.outOfBounds(x, y)) {
-		//		PS.color(x, y, PS.COLOR_MAGENTA);
-		//		PS.alpha(x, y, PS.ALPHA_OPAQUE);
-		//	}
-		//}
-	}
+    //
+	//if(!G.dagger.moving) {
+    //
+	//	PS.gridPlane(G.PLANE_EFFECTS);
+	//	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
+    //
+	//}
 
 	// Uncomment the following line to inspect parameters
-	PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
 
 };
 
@@ -628,7 +613,6 @@ PS.exit = function( x, y, data, options ) {
 	{
 		var d = new Date();
 		G.lastTouchTime = d.getTime();
-		PS.debug("time recorded!!!");
 	}
 
 	// Uncomment the following line to inspect parameters
@@ -666,11 +650,6 @@ PS.exitGrid = function( options ) {
 
 PS.keyDown = function( key, shift, ctrl, options ) {
 	"use strict";
-
-	// Uncomment the following line to inspect parameters
-	//	PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
-
-	// Add code here for when a key is pressed
 };
 
 // PS.keyUp ( key, shift, ctrl, options )
@@ -685,11 +664,6 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 
 PS.keyUp = function( key, shift, ctrl, options ) {
 	"use strict";
-
-	// Uncomment the following line to inspect parameters
-	// PS.debug( "PS.keyUp(): key = " + key + ", shift = " + shift + ", ctrl = " + ctrl + "\n" );
-
-	// Add code here for when a key is released
 };
 
 // PS.input ( sensors, options )
@@ -700,18 +674,6 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 
 PS.input = function( sensors, options ) {
 	"use strict";
-
-	// Uncomment the following block to inspect parameters
-	/*
-	PS.debug( "PS.input() called\n" );
-	var device = sensors.wheel; // check for scroll wheel
-	if ( device )
-	{
-		PS.debug( "sensors.wheel = " + device + "\n" );
-	}
-	*/
-	
-	// Add code here for when an input event is detected
 };
 
 

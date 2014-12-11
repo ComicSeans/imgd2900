@@ -342,7 +342,7 @@ var G;
 			if(type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
 				G.turnLightsOn();
-				G.turnLightsOffIn(G.pitBorderMax * G.pitFallPeriod);
+				//G.turnLightsOffIn(G.pitBorderMax * G.pitFallPeriod);
 				//PS.debug("Fell into pit!\n");
 			}
 		},
@@ -428,6 +428,7 @@ var G;
 					G.fallIntoPit = false;
 					G.pitBorder = 0;
 					//PS.debug("finished falling into pit\n")
+					G.turnLightsOff();
 					G.resetLevel();
 					PS.border(pos.x, pos.y, 0);
 				}

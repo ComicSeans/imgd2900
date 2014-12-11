@@ -198,15 +198,17 @@ var G;
 		makeLevel1 : function(level)
 		{
 			G.makeLevel0(level);
-			level.pits.push({x : 2, y : 7});
-			level.pits.push({x : 2, y : 9});
-			level.pits.push({x : 13, y : 7});
-			level.pits.push({x : 13, y : 9});
+			//level.pits.push({x : 2, y : 7});
+			//level.pits.push({x : 2, y : 9});
+			//level.pits.push({x : 13, y : 7});
+			//level.pits.push({x : 13, y : 9});
 			for(var q = 3; q < 13; q++)
 			{
 				for(var w = 7; w < 10; w++)
 				{
-					level.pits.push({x : q, y : w});
+					if(q % 2 == 1) {
+						level.pits.push({x: q, y: w});
+					}
 				}
 			}
 		},
@@ -345,16 +347,51 @@ var G;
 			}
 		},
 
+		getPlayerActivityLevel : function(){
+			var activity;
+			activity = G.recentTickWithKeyDown.length / G.periodToObserveKeysOver;
+			return activity;
+		},
+
 		update : function(){
 			G.updateLightSwitch();
 			G.updateFallIntoPit();
+			//G.updateKeyActivity();
+			//if(PS.elapsed() % 20 == 0) {
+			//	PS.debug("KEY DOWN : " + G.keyDown + ", ActivePercent: " + G.getPlayerActivityLevel().toFixed(2) + ", TicksDown :" + G.recentTickWithKeyDown.length + "\n");
+			//}
+		},
 
+		recentTickWithKeyDown : [],
+		//look at the players keydown for the past X ms
+		periodToObserveKeysOver : 3000,
+		keyDown : false,
+
+		updateKeyActivity : function(){
+			//add this tick if they key is down
+			if(G.keyDown){
+				G.recentTickWithKeyDown.push(PS.elapsed());
+			}
+			//remove old key activity
+			var numTicksToRemove = 0;
+			for(var i = 0; i < G.recentTickWithKeyDown.length; i++){
+				if(G.recentTickWithKeyDown[i] + G.periodToObserveKeysOver < PS.elapsed()){
+					numTicksToRemove = i;
+				}
+				else{
+					break;
+				}
+			}
+			G.recentTickWithKeyDown.splice(0, numTicksToRemove);
 		},
 
 		timeToTurnLightsOff : 0,
 		waitToTurnLightsOff : false,
 
+		//ms between rolling for the lights to turn on
 		lightsMightTurnOnPeriod : 5000,
+		//chance between 1 - 100
+		percentChanceLightsMayTurnOnRandomly : 50,
 		timeNextTimeLightsMightTurnOn : 0,
 
 		updateLightSwitch : function(){
@@ -363,9 +400,10 @@ var G;
 				G.turnLightsOff();
 				G.waitToTurnLightsOff = false;
 			}
+			//turn lights on randomly
 			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
-				if(PS.random(2) == 1){
+				if(PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
 					//PS.debug("Randomly turning on lights\n");
 					G.turnLightsOn();
 					G.turnLightsOffIn(2000 + PS.random(2000));
@@ -429,6 +467,11 @@ PS.init = function( system, options ) {
 	G.loadLevel(0);
 
 	G.timeNextTimeLightsMightTurnOn = G.lightsMightTurnOnPeriod;
+
+	//populate with old fake key activity
+	for(var i = 0; i < G.periodToObserveKeysOver / 2; i++){
+		G.recentTickWithKeyDown.push(0);
+	}
 
 	PS.timerStart(1, G.update);
 
@@ -537,7 +580,8 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 		return;
 	}
 
-	if(key == 32){
+	//toggle lights with tilda
+	if(key == 96 || key == 126){
 		G.switchLights();
 	}
 
@@ -545,15 +589,13 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	var right = (key == 1007) || (key == 100);
 	var up = (key == 1006) || (key == 119);
 	var left = (key == 1005) || (key == 97);
+
+	//stop if not using the arrows
+	if(!(down || right || up || left)){
+		return;
+	}
+
 	var direction = "";
-	//if(down)
-	//	PS.debug("down\n");
-	//if(right)
-	//	PS.debug("right\n");
-	//if(up)
-	//	PS.debug("up\n");
-	//if(left)
-	//	PS.debug("left\n");
 	if(down){
 		direction = "down";
 	} else if (right){
@@ -563,6 +605,11 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	} else if (up){
 		direction = "up";
 	}
+
+	//PS.debug(direction+"\n");
+
+	G.keyDown = true;
+
 	G.movePlayer(direction);
 	if(G.isLevelComplete()){
 		if(G.currentLevelNum == G.levels.length - 1) {
@@ -590,6 +637,18 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 
 PS.keyUp = function( key, shift, ctrl, options ) {
 	"use strict";
+
+	var down = (key == 1008) || (key == 115);
+	var right = (key == 1007) || (key == 100);
+	var up = (key == 1006) || (key == 119);
+	var left = (key == 1005) || (key == 97);
+
+	//stop if not using the arrows
+	if(!(down || right || up || left)){
+		return;
+	}
+
+	G.keyDown = false;
 
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.keyUp(): key = " + key + ", shift = " + shift + ", ctrl = " + ctrl + "\n" );

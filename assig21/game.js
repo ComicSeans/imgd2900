@@ -398,8 +398,8 @@ PS.init = function( system, options ) {
 	PS.border(PS.ALL, PS.ALL, 0);
 	PS.gridPlane(G.PLANE.FLOOR);
 	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
-	//PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
-	PS.color(PS.ALL, PS.ALL, PS.COLOR_GRAY_LIGHT);
+	PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
+	//PS.color(PS.ALL, PS.ALL, PS.COLOR_GRAY_LIGHT);
 	PS.gridColor(PS.COLOR_BLACK);
 
 	G.makeAllLevels();

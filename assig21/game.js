@@ -412,6 +412,7 @@ PS.init = function( system, options ) {
 	G.loadLevel(0);
 
 	PS.timerStart(1, G.update);
+
 };
 
 // PS.touch ( x, y, data, options )
@@ -510,6 +511,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	"use strict";
 
 	// Uncomment the following line to inspect parameters
+
 	//PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
 
 	if(key == 32){

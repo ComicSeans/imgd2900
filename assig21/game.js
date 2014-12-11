@@ -128,6 +128,8 @@ var G;
 
 		GRAY : PS.COLOR_GRAY,
 
+		gameComplete : false,
+
 		lightsOn : false,
 
 		playerSpr : null,
@@ -274,7 +276,7 @@ var G;
 			} else if (direction == "down"){
 				y++;
 			}
-			if(!G.isWallAt(x, y)) {
+			if(!G.isWallAt(x, y) && !G.fallIntoPit) {
 				PS.spriteMove(G.playerSpr, x, y);
 			}
 		},
@@ -302,6 +304,7 @@ var G;
 		resetLevel : function(){
 			PS.spriteMove(G.playerSpr, G.currentLevel.xStart, G.currentLevel.yStart);
 			PS.spriteShow(G.playerSpr, true);
+			G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 		},
 
 		switchLights : function(){
@@ -317,13 +320,15 @@ var G;
 			PS.gridPlane(G.PLANE.FLOOR);
 			G.lightsOn = true;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
-			G.timeLightsLastTurnedOn = PS.elapsed();
+			PS.gridColor(PS.COLOR_WHITE);
 		},
 
 		turnLightsOff : function(){
 			PS.gridPlane(G.PLANE.FLOOR);
 			G.lightsOn = false;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
+			PS.gridColor(PS.COLOR_BLACK);
+			G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 		},
 
 		turnLightsOffIn : function(delay){
@@ -346,15 +351,25 @@ var G;
 
 		},
 
-		timeLightsLastTurnedOn : 0,
 		timeToTurnLightsOff : 0,
 		waitToTurnLightsOff : false,
+
+		lightsMightTurnOnPeriod : 5000,
+		timeNextTimeLightsMightTurnOn : 0,
 
 		updateLightSwitch : function(){
 			//turn lights off after delay
 			if(G.waitToTurnLightsOff && (PS.elapsed() >= G.timeToTurnLightsOff)){
 				G.turnLightsOff();
 				G.waitToTurnLightsOff = false;
+			}
+			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
+				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
+				if(PS.random(2) == 1){
+					//PS.debug("Randomly turning on lights\n");
+					G.turnLightsOn();
+					G.turnLightsOffIn(2000 + PS.random(2000));
+				}
 			}
 		},
 
@@ -395,6 +410,8 @@ PS.init = function( system, options ) {
 
 	PS.gridSize(G.width, G.height);
 
+	PS.statusText("");
+
 	PS.border(PS.ALL, PS.ALL, 0);
 	PS.gridPlane(G.PLANE.FLOOR);
 	PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
@@ -410,6 +427,8 @@ PS.init = function( system, options ) {
 
 	//G.loadLevel(G.currentLevelNum);
 	G.loadLevel(0);
+
+	G.timeNextTimeLightsMightTurnOn = G.lightsMightTurnOnPeriod;
 
 	PS.timerStart(1, G.update);
 
@@ -514,6 +533,10 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 
 	//PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
 
+	if(G.gameComplete){
+		return;
+	}
+
 	if(key == 32){
 		G.switchLights();
 	}
@@ -542,7 +565,14 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	}
 	G.movePlayer(direction);
 	if(G.isLevelComplete()){
-		G.loadNextLevel();
+		if(G.currentLevelNum == G.levels.length - 1) {
+			G.cleanupLevel();
+			PS.statusText("END");
+			PS.statusColor(PS.COLOR_RED);
+			G.gameComplete = true;
+		}else{
+			G.loadNextLevel();
+		}
 	}
 
 	// Add code here for when a key is pressed

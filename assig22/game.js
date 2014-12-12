@@ -69,6 +69,10 @@ var myMath;
 			return (num1 * weight1 + num2 * weight2) / (weight1 + weight2);
 		},
 
+		distance : function(x1, y1, x2, y2){
+			return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+		},
+
 		/**
 		 * Maps a value from one range to between another range
 		 * @param x
@@ -78,8 +82,7 @@ var myMath;
 		 * @param out_max
 		 * @returns {number}
 		 */
-		map : function long(x, in_min, in_max, out_min, out_max)
-		{
+		map : function long(x, in_min, in_max, out_min, out_max) {
 			return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 		}
 	};
@@ -93,14 +96,13 @@ var Util;
 			var path = document.location.pathname;
 			var dir = "audio/";
 			var volume = (isMusic) ? 0.5 : 0.25;
-			var musicOptions = {
+			return {
 				volume: volume,
 				loop: isMusic,
 				lock: true,
 				path: dir,
 				fileTypes: ["mp3", "wav"]
 			};
-			return musicOptions;
 		}
 	};
 }());
@@ -184,11 +186,11 @@ var G;
 			//horizontal walls
 			for(var q = 0; q < G.width; q++)
 			{
-				level.walls.push({x : q, y : 5});
-				level.walls.push({x : q, y : 11});
+				level.walls.push({x : q, y : 4});
+				level.walls.push({x : q, y : 12});
 			}
 			//vertical walls
-			for(var w = 5; w < 11; w++)
+			for(var w = 4; w < 12; w++)
 			{
 				level.walls.push({x : 0, y : w});
 				level.walls.push({x : G.width - 1, y : w});
@@ -198,10 +200,6 @@ var G;
 		makeLevel1 : function(level)
 		{
 			G.makeLevel0(level);
-			//level.pits.push({x : 2, y : 7});
-			//level.pits.push({x : 2, y : 9});
-			//level.pits.push({x : 13, y : 7});
-			//level.pits.push({x : 13, y : 9});
 			for(var q = 3; q < 13; q++)
 			{
 				for(var w = 7; w < 10; w++)
@@ -247,6 +245,7 @@ var G;
 		},
 
 		cleanupLevel : function(){
+			G.recentPlayerMoves = [];
 			G.wallSprites.forEach(function(wallSprite){
 				PS.spriteDelete(wallSprite);
 			});
@@ -269,7 +268,7 @@ var G;
 			var pos = PS.spriteMove(G.playerSpr);
 			var x = pos.x;
 			var y = pos.y;
-			if (direction == "right"){
+			if        (direction == "right"){
 				x++;
 			} else if (direction == "up"){
 				y--;
@@ -280,6 +279,9 @@ var G;
 			}
 			if(!G.isWallAt(x, y) && !G.fallIntoPit) {
 				PS.spriteMove(G.playerSpr, x, y);
+				G.recentPlayerMoves.push(
+					{pos : {x : x, y : y},
+						tick : PS.elapsed()});
 			}
 		},
 
@@ -323,6 +325,12 @@ var G;
 			G.lightsOn = true;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 			PS.gridColor(PS.COLOR_WHITE);
+			PS.debug("Turned lights on : "+PS.elapsed()+"\n");
+		},
+
+		turnLightsOnIn : function(delay){
+			G.timeToTurnLightsOn = PS.elapsed() + delay;
+			G.waitToTurnLightsOn = true;
 		},
 
 		turnLightsOff : function(){
@@ -331,6 +339,7 @@ var G;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
 			PS.gridColor(PS.COLOR_BLACK);
 			G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
+			PS.debug("Turned lights off: "+PS.elapsed()+"\n");
 		},
 
 		turnLightsOffIn : function(delay){
@@ -338,55 +347,93 @@ var G;
 			G.waitToTurnLightsOff = true;
 		},
 
+		flickerLightsOffFlag : false,
+		flickerLightsOffEndTime : 0,
+		flickerLightsOffTotalTime : 1500,
+		flickerLightsOffTotalTimeDefault : 1000,
+		flickerLightsOffFlickerPeriodOn  : 50,
+		flickerLightsOffFlickerPeriodOff : 100,
+
+		flickerLightsOffDelayFlag : false,
+		flickerLightsOffTimeToStartFlickering : 0,
+
+		flickerLightsoffIn : function(delay){
+			G.flickerLightsOffDelayFlag = true;
+			G.flickerLightsOffTimeToStartFlickering = PS.elapsed() + delay;
+		},
+
+		flickerLightsOff : function(){
+			G.flickerLightsOffFor(G.flickerLightsOffTotalTimeDefault);
+		},
+
+		flickerLightsOffFor : function(time){
+			G.flickerLightsOffTotalTime = time;
+			G.flickerLightsOffFlag = true;
+			G.flickerLightsOffEndTime = PS.elapsed() + G.flickerLightsOffTotalTime;
+			G.turnLightsOffIn(G.flickerLightsOffFlickerPeriodOn);
+		},
+
 		collideWithPit : function(s1, p1, s2, p2, type){
 			if(type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
 				G.turnLightsOn();
-				//G.turnLightsOffIn(G.pitBorderMax * G.pitFallPeriod);
 				//PS.debug("Fell into pit!\n");
 			}
 		},
 
+		recentPlayerMoves : [],
+		//look at the players movement for the past X ms
+		periodToObserveMovementOver : 2500,
+
+		/**
+		 * returns number between 0 and 100 forhow active the player is
+		 * @returns {number}
+		 */
 		getPlayerActivityLevel : function(){
-			var activity;
-			activity = G.recentTickWithKeyDown.length / G.periodToObserveKeysOver;
-			return activity;
+			if(G.recentPlayerMoves.length == 0){
+				return 0;
+			}
+			var maxX = 0;
+			var maxY = 0;
+			var minX = G.width - 1;
+			var minY = G.height - 1;
+			//shift the old moves out of the array
+			while((G.recentPlayerMoves.length != 0) && ((G.recentPlayerMoves[0].tick + G.periodToObserveMovementOver) < PS.elapsed())){
+				G.recentPlayerMoves.shift();
+				//PS.debug("shifting item out of the array\n");
+			}
+			G.recentPlayerMoves.forEach(function(move){
+				if(move.pos.x < minX){
+					minX = move.pos.x;
+				}
+				if(move.pos.x > maxX){
+					maxX = move.pos.x;
+				}
+				if(move.pos.y < minY){
+					minY = move.pos.y;
+				}
+				if(move.pos.y > maxY){
+					maxY = move.pos.y;
+				}
+			});
+			var distanceTraveled = myMath.distance(minX, minY, maxX, maxY);
+			var activity = myMath.map(distanceTraveled, 0, Math.sqrt(G.width * G.width + G.height * G.height), 0, 100);
+			return 46.728*Math.log(0.075*activity+1);
 		},
 
 		update : function(){
 			G.updateLightSwitch();
 			G.updateFallIntoPit();
-			//G.updateKeyActivity();
-			//if(PS.elapsed() % 20 == 0) {
-			//	PS.debug("KEY DOWN : " + G.keyDown + ", ActivePercent: " + G.getPlayerActivityLevel().toFixed(2) + ", TicksDown :" + G.recentTickWithKeyDown.length + "\n");
+			//if(PS.elapsed() % 3 == 0){
+			//	PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
 			//}
-		},
-
-		recentTickWithKeyDown : [],
-		//look at the players keydown for the past X ms
-		periodToObserveKeysOver : 3000,
-		keyDown : false,
-
-		updateKeyActivity : function(){
-			//add this tick if they key is down
-			if(G.keyDown){
-				G.recentTickWithKeyDown.push(PS.elapsed());
-			}
-			//remove old key activity
-			var numTicksToRemove = 0;
-			for(var i = 0; i < G.recentTickWithKeyDown.length; i++){
-				if(G.recentTickWithKeyDown[i] + G.periodToObserveKeysOver < PS.elapsed()){
-					numTicksToRemove = i;
-				}
-				else{
-					break;
-				}
-			}
-			G.recentTickWithKeyDown.splice(0, numTicksToRemove);
 		},
 
 		timeToTurnLightsOff : 0,
 		waitToTurnLightsOff : false,
+
+		timeToTurnLightsOn : 0,
+		waitToTurnLightsOn : false,
 
 		//ms between rolling for the lights to turn on
 		lightsMightTurnOnPeriod : 5000,
@@ -395,18 +442,49 @@ var G;
 		timeNextTimeLightsMightTurnOn : 0,
 
 		updateLightSwitch : function(){
+			//update starting to flicker lights off
+			if(G.flickerLightsOffDelayFlag && (PS.elapsed() >= G.flickerLightsOffTimeToStartFlickering)){
+				G.flickerLightsOff();
+				G.flickerLightsOffDelayFlag = false;
+			}
+			//turn lights on after delay
+			if(G.waitToTurnLightsOn && (PS.elapsed() >= G.timeToTurnLightsOn)){
+				if(G.flickerLightsOffFlag){
+					G.turnLightsOn();
+					G.waitToTurnLightsOn = false;
+					G.turnLightsOffIn(G.flickerLightsOffFlickerPeriodOn);
+				} else {
+					G.turnLightsOn();
+					G.waitToTurnLightsOn = false;
+				}
+			}
 			//turn lights off after delay
 			if(G.waitToTurnLightsOff && (PS.elapsed() >= G.timeToTurnLightsOff)){
-				G.turnLightsOff();
-				G.waitToTurnLightsOff = false;
+				if(G.flickerLightsOffFlag){
+					if(PS.elapsed() >= G.flickerLightsOffEndTime){
+						G.turnLightsOff();
+						G.waitToTurnLightsOff = false;
+						G.flickerLightsOffFlag = false;
+					} else {
+						G.turnLightsOff();
+						G.waitToTurnLightsOff = false;
+						G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
+					}
+				} else {
+					G.turnLightsOff();
+					G.waitToTurnLightsOff = false;
+				}
 			}
+			//update chance lights will turn on randomly
+			G.percentChanceLightsMayTurnOnRandomly = G.getPlayerActivityLevel();
 			//turn lights on randomly
 			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 				if(PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
-					//PS.debug("Randomly turning on lights\n");
+					PS.debug("Randomly turning on lights\n");
 					G.turnLightsOn();
-					G.turnLightsOffIn(2000 + PS.random(2000));
+					//G.turnLightsOffIn(2000 + PS.random(2000));
+					G.flickerLightsoffIn(2000 + PS.random(2000));
 				}
 			}
 		},
@@ -468,11 +546,6 @@ PS.init = function( system, options ) {
 	G.loadLevel(0);
 
 	G.timeNextTimeLightsMightTurnOn = G.lightsMightTurnOnPeriod;
-
-	//populate with old fake key activity
-	for(var i = 0; i < G.periodToObserveKeysOver / 2; i++){
-		G.recentTickWithKeyDown.push(0);
-	}
 
 	PS.timerStart(1, G.update);
 
@@ -584,6 +657,13 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	//toggle lights with tilda
 	if(key == 96 || key == 126){
 		G.switchLights();
+	}
+	if(key == 49){
+		G.flickerLightsOff();
+	}
+	if(key == 50){
+		G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
+		PS.debug("Waiting to turn lights on..."+PS.elapsed()+"\n");
 	}
 
 	var down = (key == 1008) || (key == 115);

@@ -796,9 +796,9 @@ var G;
 		waitToTurnLightsOn : false,
 
 		//ms between rolling for the lights to turn on
-		lightsMightTurnOnPeriod : 4000,
+		lightsMightTurnOnPeriod : 2000,
 		//chance between 1 - 100
-		percentChanceLightsMayTurnOnRandomly : 70,
+		percentChanceLightsMayTurnOnRandomly : 60,
 		timeNextTimeLightsMightTurnOn : 0,
 
 		updateLightSwitch : function(){
@@ -904,6 +904,7 @@ var G;
 		soundFellIntoAPit : "perc_cymbal_crash4",
 		soundFlickerOn : "perc_drum_tom1",
 		soundFlickerOff : "perc_drum_tom2",
+		soundLevelComplete : "perc_triangle",
 
 		playShockSound : function(){
 			PS.audioPlay(G.soundShock);
@@ -919,6 +920,10 @@ var G;
 
 		playFellIntoAPitSound : function(){
 			PS.audioPlay(G.soundFellIntoAPit);
+		},
+
+		playLevelCompleteSound : function(){
+			PS.audioPlay(G.soundLevelComplete);
 		}
 
 	};
@@ -959,6 +964,7 @@ PS.init = function( system, options ) {
 	PS.audioLoad(G.soundFlickerOn);
 	PS.audioLoad(G.soundFlickerOff);
 	PS.audioLoad(G.soundFellIntoAPit);
+	PS.audioLoad(G.soundLevelComplete);
 
 	PS.timerStart(1, G.update);
 
@@ -1074,12 +1080,12 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	//1 key
 	if(key == 49){
 		G.flickerLightsOff();
-		PS.debug("Flickering lights off "+PS.elapsed()+"\n");
+		//PS.debug("Flickering lights off "+PS.elapsed()+"\n");
 	}
 	//2 key
 	if(key == 50){
 		G.flickerLightsOn();
-		PS.debug("Flickering lights on "+PS.elapsed()+"\n");
+		//PS.debug("Flickering lights on "+PS.elapsed()+"\n");
 	}
 
 	var down = (key == 1008) || (key == 115);
@@ -1115,8 +1121,10 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 			PS.statusText("END");
 			PS.statusColor(PS.COLOR_RED);
 			G.gameComplete = true;
+			G.playLevelCompleteSound();
 		}else{
 			G.loadNextLevel();
+			G.playLevelCompleteSound();
 		}
 	}
 
@@ -1139,7 +1147,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	}
 	if(!G.lightsOn && !G.shockLightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && G.isPlayerRunning()) {
 		//if they are running into a pit in front of them
-		PS.debug("Player moved "+direction+" at "+x+","+y+" projected to go to "+projectedX+","+projectedY+"\n");
+		//PS.debug("Player moved "+direction+" at "+x+","+y+" projected to go to "+projectedX+","+projectedY+"\n");
 		if (G.isPitAt(projectedX, projectedY)) {
 			G.flickerLightsOffFlag = false;
 			G.flickerLightsOnFlag = false;

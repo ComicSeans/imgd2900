@@ -347,6 +347,27 @@ var G;
 			G.waitToTurnLightsOff = true;
 		},
 
+		flickerLightsOnFlag : false,
+		flickerLightsOnEndTime : 0,
+		flickerLightsOnTotalTime : 1500,
+		flickerLightsOnTotalTimeDefault : 1000,
+		flickerLightsOnFlickerPeriodOn  : 50,
+		flickerLightsOnFlickerPeriodOff : 100,
+
+		flickerLightsOnDelayFlag : false,
+		flickerLightsOnTimeToStartFlickering : 0,
+
+		flickerLightsOn : function(){
+			G.flickerLightsOnFor(G.flickerLightsOnTotalTimeDefault);
+		},
+
+		flickerLightsOnFor : function(time){
+			G.flickerLightsOnTotalTime = time;
+			G.flickerLightsOnFlag = true;
+			G.flickerLightsOnEndTime = PS.elapsed() + G.flickerLightsOnTotalTime;
+			G.turnLightsOnIn(G.flickerLightsOnFlickerPeriodOff);
+		},
+
 		flickerLightsOffFlag : false,
 		flickerLightsOffEndTime : 0,
 		flickerLightsOffTotalTime : 1500,
@@ -370,7 +391,8 @@ var G;
 			G.flickerLightsOffTotalTime = time;
 			G.flickerLightsOffFlag = true;
 			G.flickerLightsOffEndTime = PS.elapsed() + G.flickerLightsOffTotalTime;
-			G.turnLightsOffIn(G.flickerLightsOffFlickerPeriodOn);
+			G.turnLightsOff();
+			G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
 		},
 
 		collideWithPit : function(s1, p1, s2, p2, type){
@@ -660,6 +682,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	}
 	if(key == 49){
 		G.flickerLightsOff();
+		PS.debug("Flickering lights off "+PS.elapsed()+"\n");
 	}
 	if(key == 50){
 		G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);

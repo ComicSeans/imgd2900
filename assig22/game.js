@@ -458,42 +458,6 @@ var G;
 
 		],
 
-		makeAllLevels : function()
-		{
-			G.makeLevel0(G.levels[0]);
-			G.makeLevel1(G.levels[1]);
-		},
-
-		makeLevel0 : function(level)
-		{
-			//horizontal walls
-			for(var q = 0; q < G.width; q++)
-			{
-				level.walls.push({x : q, y : 4});
-				level.walls.push({x : q, y : 12});
-			}
-			//vertical walls
-			for(var w = 4; w < 12; w++)
-			{
-				level.walls.push({x : 0, y : w});
-				level.walls.push({x : G.width - 1, y : w});
-			}
-		},
-
-		makeLevel1 : function(level)
-		{
-			G.makeLevel0(level);
-			for(var q = 3; q < 13; q++)
-			{
-				for(var w = 7; w < 10; w++)
-				{
-					if(q % 2 == 1) {
-						level.pits.push({x: q, y: w});
-					}
-				}
-			}
-		},
-
 		loadLevel : function(levelNum)
 		{
 			PS.debug("Starting to load new level\n");
@@ -598,33 +562,37 @@ var G;
 		},
 
 		isWallAt : function(x, y){
-			var pos;
-			var xWall;
-			var yWall;
-			for(var i = 0; i < G.wallSprites.length; i++){
-				pos = PS.spriteMove(G.wallSprites[i]);
-				xWall = pos.x;
-				yWall = pos.y;
-				if((x == xWall) && (y == yWall)){
-					return  true;
-				}
-			}
-			return false;
+			return G.currentLevel.map[y * G.width + x] == 1;
+			//
+			//var pos;
+			//var xWall;
+			//var yWall;
+			//for(var i = 0; i < G.wallSprites.length; i++){
+			//	pos = PS.spriteMove(G.wallSprites[i]);
+			//	xWall = pos.x;
+			//	yWall = pos.y;
+			//	if((x == xWall) && (y == yWall)){
+			//		return  true;
+			//	}
+			//}
+			//return false;
 		},
 
 		isPitAt : function(x, y){
-			var pos;
-			var xPit;
-			var yPit;
-			for(var i = 0; i < G.pitSprites.length; i++){
-				pos = PS.spriteMove(G.pitSprites[i]);
-				xPit = pos.x;
-				yPit = pos.y;
-				if((x == xPit) && (y == yPit)){
-					return  true;
-				}
-			}
-			return false;
+			return G.currentLevel.map[y * G.width + x] == 2;
+
+			//var pos;
+			//var xPit;
+			//var yPit;
+			//for(var i = 0; i < G.pitSprites.length; i++){
+			//	pos = PS.spriteMove(G.pitSprites[i]);
+			//	xPit = pos.x;
+			//	yPit = pos.y;
+			//	if((x == xPit) && (y == yPit)){
+			//		return  true;
+			//	}
+			//}
+			//return false;
 		},
 
 		isLevelComplete : function(){
@@ -693,7 +661,9 @@ var G;
 			G.flickerLightsOnTotalTime = time;
 			G.flickerLightsOnFlag = true;
 			G.flickerLightsOnEndTime = PS.elapsed() + G.flickerLightsOnTotalTime;
-			G.turnLightsOnIn(G.flickerLightsOnFlickerPeriodOff);
+			G.turnLightsOn();
+			G.playFlickerOnSound();
+			G.turnLightsOffIn(G.flickerLightsOnFlickerPeriodOn);
 		},
 
 		flickerLightsOffFlag : false,
@@ -720,12 +690,14 @@ var G;
 			G.flickerLightsOffFlag = true;
 			G.flickerLightsOffEndTime = PS.elapsed() + G.flickerLightsOffTotalTime;
 			G.turnLightsOff();
+			G.playFlickerOffSound();
 			G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
 		},
 
 		collideWithPit : function(s1, p1, s2, p2, type){
 			if(!G.fallingImmute && type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
+				G.playFellIntoAPitSound();
 				G.flickerLightsOffFlag = false;
 				G.flickerLightsOnFlag = false;
 				G.turnLightsOn();
@@ -735,7 +707,7 @@ var G;
 
 		recentPlayerMoves : [],
 		//look at the players movement for the past X ms
-		periodToObserveMovementOver : 2500,
+		periodToObserveMovementOver : 5000,
 
 		/**
 		 * returns number between 0 and 100 forhow active the player is
@@ -770,16 +742,16 @@ var G;
 			});
 			var distanceTraveled = myMath.distance(minX, minY, maxX, maxY);
 			var activity = myMath.map(distanceTraveled, 0, Math.sqrt(G.width * G.width + G.height * G.height), 0, 100);
-			return 32.846*Math.log(0.2*activity+1);
+			return 23.091*Math.log(0.75*activity+1);
 		},
 
 		update : function(){
 			G.updateLightSwitch();
 			G.updateFallIntoPit();
-			//if(PS.elapsed() % 3 == 0){
-			//	//PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
-			//	//PS.debug("Tick: "+PS.elapsed()+" Running: "+G.isPlayerRunning()+"\n");
-			//}
+			if(PS.elapsed() % 4 == 0){
+				PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
+				//PS.debug("Tick: "+PS.elapsed()+" Running: "+G.isPlayerRunning()+"\n");
+			}
 		},
 
 		timeToTurnLightsOff : 0,
@@ -791,7 +763,7 @@ var G;
 		//ms between rolling for the lights to turn on
 		lightsMightTurnOnPeriod : 4000,
 		//chance between 1 - 100
-		percentChanceLightsMayTurnOnRandomly : 50,
+		percentChanceLightsMayTurnOnRandomly : 70,
 		timeNextTimeLightsMightTurnOn : 0,
 
 		updateLightSwitch : function(){
@@ -805,16 +777,19 @@ var G;
 				//turn lights on while flicking them off
 				if(G.flickerLightsOffFlag){
 					G.turnLightsOn();
+					G.playFlickerOnSound();
 					G.waitToTurnLightsOn = false;
 					G.turnLightsOffIn(G.flickerLightsOffFlickerPeriodOn);
 				} else if (G.flickerLightsOnFlag) { //turn lights on while flickering them on
 					//end of the flicking on
 					if(PS.elapsed() >= G.flickerLightsOnEndTime){
 						G.turnLightsOn();
+						G.playFlickerOnSound();
 						G.waitToTurnLightsOn = false;
 						G.flickerLightsOnFlag = false;
 					} else { //continue the flickering
 						G.turnLightsOn();
+						G.playFlickerOnSound();
 						G.waitToTurnLightsOn = false;
 						G.turnLightsOffIn(G.flickerLightsOnFlickerPeriodOn);
 					}
@@ -830,15 +805,18 @@ var G;
 					//end of the flickering off
 					if(PS.elapsed() >= G.flickerLightsOffEndTime){
 						G.turnLightsOff();
+						G.playFlickerOffSound();
 						G.waitToTurnLightsOff = false;
 						G.flickerLightsOffFlag = false;
 					} else { //continue the flickering
 						G.turnLightsOff();
+						G.playFlickerOffSound();
 						G.waitToTurnLightsOff = false;
 						G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
 					}
 				} else if (G.flickerLightsOnFlag){ //flicker lights off while flickering them on
 					G.turnLightsOff();
+					G.playFlickerOffSound();
 					G.waitToTurnLightsOff = false;
 					G.turnLightsOnIn(G.flickerLightsOnFlickerPeriodOff);
 				} else { //turn lights off normally
@@ -851,7 +829,7 @@ var G;
 			//turn lights on randomly
 			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
-				if(!G.lightsOn && PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
+				if(!G.lightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
 					PS.debug("Randomly turning on lights\n");
 					//G.turnLightsOn();
 					G.flickerLightsOn();
@@ -884,7 +862,30 @@ var G;
 					PS.border(pos.x, pos.y, 0);
 				}
 			}
+		},
+
+		//sounds
+		soundShock : "perc_cymbal_crash1",
+		soundFellIntoAPit : "perc_cymbal_crash4",
+		soundFlickerOn : "perc_drum_tom1",
+		soundFlickerOff : "perc_drum_tom2",
+
+		playShockSound : function(){
+			PS.audioPlay(G.soundShock);
+		},
+
+		playFlickerOnSound : function(){
+			PS.audioPlay(G.soundFlickerOn);
+		},
+
+		playFlickerOffSound : function(){
+			PS.audioPlay(G.soundFlickerOff);
+		},
+
+		playFellIntoAPitSound : function(){
+			PS.audioPlay(G.soundFellIntoAPit);
 		}
+
 	};
 }());
 
@@ -909,17 +910,20 @@ PS.init = function( system, options ) {
 	//PS.color(PS.ALL, PS.ALL, PS.COLOR_GRAY_LIGHT);
 	PS.gridColor(PS.COLOR_BLACK);
 
-	G.makeAllLevels();
-
 	G.playerSpr = PS.spriteSolid(1, 1);
 	PS.spritePlane(G.playerSpr, G.PLANE.PLAYER);
 	PS.spriteSolidColor(G.playerSpr, G.GRAY);
 
-	G.currentLevelNum = 0;
+	G.currentLevelNum = 9;
 	G.loadLevel(G.currentLevelNum);
 	//G.loadLevel(0);
 
 	G.timeNextTimeLightsMightTurnOn = G.lightsMightTurnOnPeriod;
+
+	PS.audioLoad(G.soundShock);
+	PS.audioLoad(G.soundFlickerOn);
+	PS.audioLoad(G.soundFlickerOff);
+	PS.audioLoad(G.soundFellIntoAPit);
 
 	PS.timerStart(1, G.update);
 
@@ -1121,12 +1125,13 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 	} else if(right){
 		x++;
 	}
-	if(!G.shockLightsOn && G.isPlayerRunning() && G.isPitAt(x, y)){
+	if(!G.lightsOn && !G.shockLightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && G.isPlayerRunning() && G.isPitAt(x, y)){
 		G.flickerLightsOffFlag = false;
 		G.flickerLightsOnFlag = false;
 		G.shockLightsOn = true;
 		G.turnLightsOn();
 		G.turnLightsOffIn(1500);
+		G.playShockSound();
 	}
 
 	// Uncomment the following line to inspect parameters

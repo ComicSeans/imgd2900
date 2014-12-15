@@ -454,7 +454,7 @@ var G;
 
 				pits :
 					[ 	]
-			}
+			},
 
 			// LEVEL X
 			{

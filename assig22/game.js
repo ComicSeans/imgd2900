@@ -133,6 +133,7 @@ var G;
 		gameComplete : false,
 
 		lightsOn : false,
+		shockLightsOn : false,
 
 		playerSpr : null,
 		wallSprites : [],
@@ -140,6 +141,8 @@ var G;
 
 		currentLevel : {},
 		currentLevelNum : 0,
+
+		lastMoveDir : "",
 
 		//each level has a map of the grid in a 16x16 array,
 		//0 is floor
@@ -152,7 +155,24 @@ var G;
 				xStart : 2, yStart : 8,
 				xGoal : 13, yGoal : 8,
 
-				map : [],
+				map : [
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+				],
 
 				walls : [],
 
@@ -420,6 +440,7 @@ var G;
 		loadLevel : function(levelNum)
 		{
 			PS.debug("Starting to load new level\n");
+			G.fallingImmute = true;
 			G.currentLevel = G.levels[levelNum];
 			var level = G.currentLevel;
 			//load the wall sprites
@@ -456,14 +477,13 @@ var G;
 				G.pitSprites.push(pitSprite);
 			});
 			//move the player
-			G.fallingImmute = true;
 			PS.debug("moving player sprite to new start\n");
 			PS.spriteMove(G.playerSpr, level.xStart, level.yStart);
-			G.fallingImmute = false;
 			//draw the goal
 			PS.gridPlane(G.PLANE.GOAL);
 			PS.border(level.xGoal, level.yGoal, 4);
 			PS.borderColor(level.xGoal, level.xGoal, G.GRAY);
+			G.fallingImmute = false;
 		},
 
 		cleanupLevel : function(){
@@ -507,6 +527,19 @@ var G;
 			}
 		},
 
+		runningPeriodToCheck : 400,
+		runningMovesThreshold : 2,
+
+		isPlayerRunning : function(){
+			var numMoves = 0;
+			G.recentPlayerMoves.forEach(function(move){
+				if(move.tick + G.runningPeriodToCheck >= PS.elapsed()) {
+					numMoves++;
+				}
+			});
+			return numMoves >= G.runningMovesThreshold;
+		},
+
 		isWallAt : function(x, y){
 			var pos;
 			var xWall;
@@ -515,7 +548,22 @@ var G;
 				pos = PS.spriteMove(G.wallSprites[i]);
 				xWall = pos.x;
 				yWall = pos.y;
-				if((x == xWall) &&(y == yWall)){
+				if((x == xWall) && (y == yWall)){
+					return  true;
+				}
+			}
+			return false;
+		},
+
+		isPitAt : function(x, y){
+			var pos;
+			var xPit;
+			var yPit;
+			for(var i = 0; i < G.pitSprites.length; i++){
+				pos = PS.spriteMove(G.pitSprites[i]);
+				xPit = pos.x;
+				yPit = pos.y;
+				if((x == xPit) && (y == yPit)){
 					return  true;
 				}
 			}
@@ -547,7 +595,7 @@ var G;
 			G.lightsOn = true;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 			PS.gridColor(PS.COLOR_WHITE);
-			PS.debug("Turned lights on : "+PS.elapsed()+"\n");
+			//PS.debug("Turned lights on : "+PS.elapsed()+"\n");
 		},
 
 		turnLightsOnIn : function(delay){
@@ -558,10 +606,11 @@ var G;
 		turnLightsOff : function(){
 			PS.gridPlane(G.PLANE.FLOOR);
 			G.lightsOn = false;
+			G.shockLightsOn = false;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
 			PS.gridColor(PS.COLOR_BLACK);
 			G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
-			PS.debug("Turned lights off: "+PS.elapsed()+"\n");
+			//PS.debug("Turned lights off: "+PS.elapsed()+"\n");
 		},
 
 		turnLightsOffIn : function(delay){
@@ -620,6 +669,8 @@ var G;
 		collideWithPit : function(s1, p1, s2, p2, type){
 			if(!G.fallingImmute && type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
+				G.flickerLightsOffFlag = false;
+				G.flickerLightsOnFlag = false;
 				G.turnLightsOn();
 				PS.debug("Fell into pit!\n");
 			}
@@ -662,14 +713,15 @@ var G;
 			});
 			var distanceTraveled = myMath.distance(minX, minY, maxX, maxY);
 			var activity = myMath.map(distanceTraveled, 0, Math.sqrt(G.width * G.width + G.height * G.height), 0, 100);
-			return 46.728*Math.log(0.075*activity+1);
+			return 32.846*Math.log(0.2*activity+1);
 		},
 
 		update : function(){
 			G.updateLightSwitch();
 			G.updateFallIntoPit();
 			//if(PS.elapsed() % 3 == 0){
-			//	PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
+			//	//PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
+			//	//PS.debug("Tick: "+PS.elapsed()+" Running: "+G.isPlayerRunning()+"\n");
 			//}
 		},
 
@@ -680,7 +732,7 @@ var G;
 		waitToTurnLightsOn : false,
 
 		//ms between rolling for the lights to turn on
-		lightsMightTurnOnPeriod : 5000,
+		lightsMightTurnOnPeriod : 4000,
 		//chance between 1 - 100
 		percentChanceLightsMayTurnOnRandomly : 50,
 		timeNextTimeLightsMightTurnOn : 0,
@@ -742,7 +794,7 @@ var G;
 			//turn lights on randomly
 			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
-				if(PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
+				if(!G.lightsOn && PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
 					PS.debug("Randomly turning on lights\n");
 					//G.turnLightsOn();
 					G.flickerLightsOn();
@@ -806,8 +858,9 @@ PS.init = function( system, options ) {
 	PS.spritePlane(G.playerSpr, G.PLANE.PLAYER);
 	PS.spriteSolidColor(G.playerSpr, G.GRAY);
 
-	//G.loadLevel(G.currentLevelNum);
-	G.loadLevel(0);
+	G.currentLevelNum = 0;
+	G.loadLevel(G.currentLevelNum);
+	//G.loadLevel(0);
 
 	G.timeNextTimeLightsMightTurnOn = G.lightsMightTurnOnPeriod;
 
@@ -957,6 +1010,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	//PS.debug(direction+"\n");
 
 	G.keyDown = true;
+	G.lastMoveDir = direction;
 
 	G.movePlayer(direction);
 	if(G.isLevelComplete()){
@@ -997,6 +1051,26 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 	}
 
 	G.keyDown = false;
+
+	var playerPos = PS.spriteMove(G.playerSpr);
+	var x = playerPos.x;
+	var y = playerPos.y;
+	if(up){
+		y--;
+	} else if(down){
+		y++;
+	} else if(left){
+		x--;
+	} else if(right){
+		x++;
+	}
+	if(!G.shockLightsOn && G.isPlayerRunning() && G.isPitAt(x, y)){
+		G.flickerLightsOffFlag = false;
+		G.flickerLightsOnFlag = false;
+		G.shockLightsOn = true;
+		G.turnLightsOn();
+		G.turnLightsOffIn(1500);
+	}
 
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.keyUp(): key = " + key + ", shift = " + shift + ", ctrl = " + ctrl + "\n" );

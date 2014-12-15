@@ -681,7 +681,7 @@ var G;
 		flickerLightsOnFlag : false,
 		flickerLightsOnEndTime : 0,
 		flickerLightsOnTotalTime : 1500,
-		flickerLightsOnTotalTimeDefault : 1000,
+		flickerLightsOnTotalTimeDefault : 750,
 		flickerLightsOnFlickerPeriodOn  : 50,
 		flickerLightsOnFlickerPeriodOff : 100,
 
@@ -704,7 +704,7 @@ var G;
 		flickerLightsOffFlag : false,
 		flickerLightsOffEndTime : 0,
 		flickerLightsOffTotalTime : 1500,
-		flickerLightsOffTotalTimeDefault : 1000,
+		flickerLightsOffTotalTimeDefault : 750,
 		flickerLightsOffFlickerPeriodOn  : 50,
 		flickerLightsOffFlickerPeriodOff : 100,
 
@@ -798,7 +798,7 @@ var G;
 		//ms between rolling for the lights to turn on
 		lightsMightTurnOnPeriod : 2000,
 		//chance between 1 - 100
-		percentChanceLightsMayTurnOnRandomly : 60,
+		percentChanceLightsMayTurnOnRandomly : 55,
 		timeNextTimeLightsMightTurnOn : 0,
 
 		updateLightSwitch : function(){

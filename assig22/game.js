@@ -949,7 +949,7 @@ PS.init = function( system, options ) {
 	PS.spritePlane(G.playerSpr, G.PLANE.PLAYER);
 	PS.spriteSolidColor(G.playerSpr, G.GRAY);
 
-	G.currentLevelNum = 9;
+	G.currentLevelNum = 0;
 	G.loadLevel(G.currentLevelNum);
 	//G.loadLevel(0);
 

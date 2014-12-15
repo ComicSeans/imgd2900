@@ -1121,8 +1121,22 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 			PS.statusText("END");
 			PS.statusColor(PS.COLOR_RED);
 			G.gameComplete = true;
+			G.waitToTurnLightsOff = false;
+			G.waitToTurnLightsOn = false;
+			G.flickerLightsOffFlag = false;
+			G.flickerLightsOnFlag = false;
+			G.flickerLightsOffDelayFlag = false;
+			G.flickerLightsOnDelayFlag = false;
+			G.turnLightsOff();
 			G.playLevelCompleteSound();
 		}else{
+			G.waitToTurnLightsOff = false;
+			G.waitToTurnLightsOn = false;
+			G.flickerLightsOffFlag = false;
+			G.flickerLightsOnFlag = false;
+			G.flickerLightsOffDelayFlag = false;
+			G.flickerLightsOnDelayFlag = false;
+			G.turnLightsOff();
 			G.loadNextLevel();
 			G.playLevelCompleteSound();
 		}

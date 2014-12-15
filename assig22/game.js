@@ -148,35 +148,46 @@ var G;
 				xStart : 2, yStart : 8,
 				xGoal : 13, yGoal : 8,
 
-				walls :
-				[
+				map : [],
 
-				],
+				walls : [],
 
-				pits :
-				[
-
-				]
+				pits : []
 			},
 			// LEVEL 1
 			{
 				xStart : 2, yStart : 8,
 				xGoal : 13, yGoal : 8,
 
-				walls :
-				[
+				map : [],
 
-				],
+				walls : [],
 
-				pits :
-				[
-
-				]
+				pits : []
 			},
 			// LEVEL X
 			{
 				xStart : 2, yStart : 2,
 				xGoal : 14, yGoal : 14,
+
+				map : [
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+					1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
+					1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1,
+					1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1,
+					1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1,
+					1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
+					1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+					1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+				],
 
 				walls :
 					[
@@ -362,7 +373,7 @@ var G;
 						{x : 11, y : 15}
 
 					]
-			},
+			}
 
 		],
 
@@ -404,6 +415,7 @@ var G;
 
 		loadLevel : function(levelNum)
 		{
+			PS.debug("Starting to load new level\n");
 			G.currentLevel = G.levels[levelNum];
 			var level = G.currentLevel;
 			//load the wall sprites
@@ -428,7 +440,10 @@ var G;
 				G.pitSprites.push(pitSprite);
 			});
 			//move the player
+			G.fallingImmute = true;
+			PS.debug("moving player sprite to new start\n");
 			PS.spriteMove(G.playerSpr, level.xStart, level.yStart);
+			G.fallingImmute = false;
 			//draw the goal
 			PS.gridPlane(G.PLANE.GOAL);
 			PS.border(level.xGoal, level.yGoal, 4);
@@ -587,10 +602,10 @@ var G;
 		},
 
 		collideWithPit : function(s1, p1, s2, p2, type){
-			if(type == PS.SPRITE_OVERLAP) {
+			if(!G.fallingImmute && type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
 				G.turnLightsOn();
-				//PS.debug("Fell into pit!\n");
+				PS.debug("Fell into pit!\n");
 			}
 		},
 
@@ -662,28 +677,46 @@ var G;
 			}
 			//turn lights on after delay
 			if(G.waitToTurnLightsOn && (PS.elapsed() >= G.timeToTurnLightsOn)){
+				//turn lights on while flicking them off
 				if(G.flickerLightsOffFlag){
 					G.turnLightsOn();
 					G.waitToTurnLightsOn = false;
 					G.turnLightsOffIn(G.flickerLightsOffFlickerPeriodOn);
-				} else {
+				} else if (G.flickerLightsOnFlag) { //turn lights on while flickering them on
+					//end of the flicking on
+					if(PS.elapsed() >= G.flickerLightsOnEndTime){
+						G.turnLightsOn();
+						G.waitToTurnLightsOn = false;
+						G.flickerLightsOnFlag = false;
+					} else { //continue the flickering
+						G.turnLightsOn();
+						G.waitToTurnLightsOn = false;
+						G.turnLightsOffIn(G.flickerLightsOnFlickerPeriodOn);
+					}
+				} else { //turn lights on normally
 					G.turnLightsOn();
 					G.waitToTurnLightsOn = false;
 				}
 			}
 			//turn lights off after delay
 			if(G.waitToTurnLightsOff && (PS.elapsed() >= G.timeToTurnLightsOff)){
+				//turn lights off for while flickering them off
 				if(G.flickerLightsOffFlag){
+					//end of the flickering off
 					if(PS.elapsed() >= G.flickerLightsOffEndTime){
 						G.turnLightsOff();
 						G.waitToTurnLightsOff = false;
 						G.flickerLightsOffFlag = false;
-					} else {
+					} else { //continue the flickering
 						G.turnLightsOff();
 						G.waitToTurnLightsOff = false;
 						G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
 					}
-				} else {
+				} else if (G.flickerLightsOnFlag){ //flicker lights off while flickering them on
+					G.turnLightsOff();
+					G.waitToTurnLightsOff = false;
+					G.turnLightsOnIn(G.flickerLightsOnFlickerPeriodOff);
+				} else { //turn lights off normally
 					G.turnLightsOff();
 					G.waitToTurnLightsOff = false;
 				}
@@ -695,14 +728,16 @@ var G;
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 				if(PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
 					PS.debug("Randomly turning on lights\n");
-					G.turnLightsOn();
+					//G.turnLightsOn();
+					G.flickerLightsOn();
 					//G.turnLightsOffIn(2000 + PS.random(2000));
-					G.flickerLightsoffIn(2000 + PS.random(2000));
+					G.flickerLightsoffIn(3000 + PS.random(3000));
 				}
 			}
 		},
 
 		fallIntoPit : false,
+		fallingImmute : false,
 		pitBorder : 0,
 		pitBorderMax : 12,
 		pitFallPeriod : 100,
@@ -871,13 +906,15 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	if(key == 96 || key == 126){
 		G.switchLights();
 	}
+	//1 key
 	if(key == 49){
 		G.flickerLightsOff();
 		PS.debug("Flickering lights off "+PS.elapsed()+"\n");
 	}
+	//2 key
 	if(key == 50){
-		G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
-		PS.debug("Waiting to turn lights on..."+PS.elapsed()+"\n");
+		G.flickerLightsOn();
+		PS.debug("Flickering lights on "+PS.elapsed()+"\n");
 	}
 
 	var down = (key == 1008) || (key == 115);

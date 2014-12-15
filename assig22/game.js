@@ -491,7 +491,7 @@ var G;
 
 		loadLevel : function(levelNum)
 		{
-			PS.debug("Starting to load new level\n");
+			//PS.debug("Starting to load new level\n");
 			G.fallingImmute = true;
 			G.currentLevel = G.levels[levelNum];
 			var level = G.currentLevel;
@@ -529,7 +529,7 @@ var G;
 				G.pitSprites.push(pitSprite);
 			});
 			//move the player
-			PS.debug("moving player sprite to new start\n");
+			//PS.debug("moving player sprite to new start\n");
 			PS.spriteMove(G.playerSpr, level.xStart, level.yStart);
 			//draw the goal
 			PS.gridPlane(G.PLANE.GOAL);
@@ -607,6 +607,10 @@ var G;
 			//	}
 			//}
 			//return false;
+		},
+
+		getTileAt : function(x , y){
+			return G.currentLevel.map[y * G.width + x];
 		},
 
 		isPitAt : function(x, y){
@@ -732,7 +736,7 @@ var G;
 				G.flickerLightsOffFlag = false;
 				G.flickerLightsOnFlag = false;
 				G.turnLightsOn();
-				PS.debug("Fell into pit!\n");
+				//PS.debug("Fell into pit!\n");
 			}
 		},
 
@@ -779,10 +783,10 @@ var G;
 		update : function(){
 			G.updateLightSwitch();
 			G.updateFallIntoPit();
-			if(PS.elapsed() % 4 == 0){
-				PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
-				//PS.debug("Tick: "+PS.elapsed()+" Running: "+G.isPlayerRunning()+"\n");
-			}
+			//if(PS.elapsed() % 4 == 0){
+			//	PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
+			//	//PS.debug("Tick: "+PS.elapsed()+" Running: "+G.isPlayerRunning()+"\n");
+			//}
 		},
 
 		timeToTurnLightsOff : 0,
@@ -861,7 +865,7 @@ var G;
 			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 				if(!G.lightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
-					PS.debug("Randomly turning on lights\n");
+					//PS.debug("Randomly turning on lights\n");
 					//G.turnLightsOn();
 					G.flickerLightsOn();
 					//G.turnLightsOffIn(2000 + PS.random(2000));
@@ -945,7 +949,7 @@ PS.init = function( system, options ) {
 	PS.spritePlane(G.playerSpr, G.PLANE.PLAYER);
 	PS.spriteSolidColor(G.playerSpr, G.GRAY);
 
-	G.currentLevelNum = 0;
+	G.currentLevelNum = 9;
 	G.loadLevel(G.currentLevelNum);
 	//G.loadLevel(0);
 
@@ -1116,6 +1120,59 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 		}
 	}
 
+	////////////////////////////////
+
+	var x1, y1, x2, y2;
+
+	var playerPos = PS.spriteMove(G.playerSpr);
+	var x = playerPos.x;
+	var y = playerPos.y;
+	var projectedX = x, projectedY = y;
+	if(up){
+		projectedY = y - 1;
+	} else if(down){
+		projectedY = y + 1;
+	} else if(left){
+		projectedX = x - 1;
+	} else if(right){
+		projectedX = x + 1;
+	}
+	if(!G.lightsOn && !G.shockLightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && G.isPlayerRunning()) {
+		//if they are running into a pit in front of them
+		PS.debug("Player moved "+direction+" at "+x+","+y+" projected to go to "+projectedX+","+projectedY+"\n");
+		if (G.isPitAt(projectedX, projectedY)) {
+			G.flickerLightsOffFlag = false;
+			G.flickerLightsOnFlag = false;
+			G.shockLightsOn = true;
+			G.turnLightsOn();
+			G.turnLightsOffIn(1500);
+			G.playShockSound();
+		}
+		//if they are going into a wall, look to their left and right
+		if (G.isWallAt(projectedX, projectedY)) {
+			if (up || down) {
+				x1 = x + 1;
+				x2 = x - 1;
+				y1 = y;
+				y2 = y;
+			} else if (left || right) {
+				x1 = x;
+				x2 = x;
+				y1 = y - 1;
+				y2 = y + 1;
+			}
+			//there is a pit to their side!
+			if (G.isPitAt(x1, y1) || G.isPitAt(x2, y2)) {
+				G.flickerLightsOffFlag = false;
+				G.flickerLightsOnFlag = false;
+				G.shockLightsOn = true;
+				G.turnLightsOn();
+				G.turnLightsOffIn(1500);
+				G.playShockSound();
+			}
+		}
+	}
+
 	// Add code here for when a key is pressed
 };
 
@@ -1132,6 +1189,8 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 PS.keyUp = function( key, shift, ctrl, options ) {
 	"use strict";
 
+	var x1, y1, x2, y2;
+
 	var down = (key == 1008) || (key == 115);
 	var right = (key == 1007) || (key == 100);
 	var up = (key == 1006) || (key == 119);
@@ -1144,26 +1203,54 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 
 	G.keyDown = false;
 
-	var playerPos = PS.spriteMove(G.playerSpr);
-	var x = playerPos.x;
-	var y = playerPos.y;
-	if(up){
-		y--;
-	} else if(down){
-		y++;
-	} else if(left){
-		x--;
-	} else if(right){
-		x++;
-	}
-	if(!G.lightsOn && !G.shockLightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && G.isPlayerRunning() && G.isPitAt(x, y)){
-		G.flickerLightsOffFlag = false;
-		G.flickerLightsOnFlag = false;
-		G.shockLightsOn = true;
-		G.turnLightsOn();
-		G.turnLightsOffIn(1500);
-		G.playShockSound();
-	}
+	//var playerPos = PS.spriteMove(G.playerSpr);
+	//var x = playerPos.x;
+	//var y = playerPos.y;
+	//var projectedX = 0, projectedY = 0;
+	//if(up){
+	//	projectedY = y - 1;
+	//} else if(down){
+	//	projectedY = y + 1;
+	//} else if(left){
+	//	projectedX = x - 1;
+	//} else if(right){
+	//	projectedX = x + 1;
+	//}
+	//if(!G.lightsOn && !G.shockLightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && G.isPlayerRunning()){
+	//	//if they are running into a pit in front of them
+	//	if(G.isPitAt(projectedX, projectedY)){
+	//		G.flickerLightsOffFlag = false;
+	//		G.flickerLightsOnFlag = false;
+	//		G.shockLightsOn = true;
+	//		G.turnLightsOn();
+	//		G.turnLightsOffIn(1500);
+	//		G.playShockSound();
+	//	}
+	//	//if they are going into a wall, look to their left and right
+	//	if(G.isWallAt(projectedX, projectedY)){
+	//		if(up || down){
+	//			x1 = x + 1;
+	//			x2 = x - 1;
+	//			y1 = y;
+	//			y2 = y;
+	//		} else if(left || right){
+	//			x1 = x;
+	//			x2 = x;
+	//			y1 = y - 1;
+	//			y2 = y + 1;
+	//		}
+	//		//there is a pit to their side!
+	//		if(G.isPitAt(x1, y1) || G.isPitAt(x2, y2)){
+	//			G.flickerLightsOffFlag = false;
+	//			G.flickerLightsOnFlag = false;
+	//			G.shockLightsOn = true;
+	//			G.turnLightsOn();
+	//			G.turnLightsOffIn(1500);
+	//			G.playShockSound();
+	//		}
+	//	}
+    //
+	//}
 
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.keyUp(): key = " + key + ", shift = " + shift + ", ctrl = " + ctrl + "\n" );

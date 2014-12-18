@@ -492,7 +492,7 @@ var G;
 		loadLevel : function(levelNum)
 		{
 			//PS.debug("Starting to load new level\n");
-			G.fallingImmute = true;
+			G.fallingImmune = true;
 			G.currentLevel = G.levels[levelNum];
 			var level = G.currentLevel;
 			//load the wall sprites
@@ -535,7 +535,7 @@ var G;
 			PS.gridPlane(G.PLANE.GOAL);
 			PS.border(level.xGoal, level.yGoal, 4);
 			PS.borderColor(level.xGoal, level.xGoal, G.GRAY);
-			G.fallingImmute = false;
+			G.fallingImmune = false;
 		},
 
 		cleanupLevel : function(){
@@ -730,7 +730,7 @@ var G;
 		},
 
 		collideWithPit : function(s1, p1, s2, p2, type){
-			if(!G.fallingImmute && type == PS.SPRITE_OVERLAP) {
+			if(!G.fallingImmune && type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
 				G.playFellIntoAPitSound();
 				G.flickerLightsOffFlag = false;
@@ -875,7 +875,7 @@ var G;
 		},
 
 		fallIntoPit : false,
-		fallingImmute : false,
+		fallingImmune : false,
 		pitBorder : 0,
 		pitBorderMax : 12,
 		pitFallPeriod : 100,

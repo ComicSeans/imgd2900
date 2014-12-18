@@ -125,12 +125,16 @@ var G;
 			PITS : 6,
 			WALLS : 7,
 			GOAL : 10,
-			PLAYER : 11
+			PLAYER : 11,
+			TOP : 20
 		},
 
 		GRAY : PS.COLOR_GRAY,
 
+		playerBorder : 3,
+
 		gameComplete : false,
+		levelComplete : false,
 
 		lightsOn : false,
 		shockLightsOn : false,
@@ -245,9 +249,9 @@ var G;
 
 				map : [
 					0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-					0, 0, 0, 0, 1, 1, 0, 2, 0, 0, 1, 1, 0, 0, 0, 0,
+					0, 0, 0, 0, 1, 1, 2, 0, 0, 0, 1, 1, 0, 0, 0, 0,
 					0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0,
-					0, 0, 0, 0, 1, 2, 0, 2, 0, 0, 2, 1, 0, 0, 0, 0,
+					0, 0, 0, 0, 1, 2, 2, 0, 0, 0, 2, 1, 0, 0, 0, 0,
 					0, 0, 0, 0, 1, 1, 1, 2, 1, 0, 0, 1, 0, 0, 0, 0,
 					0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0,
 					0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0,
@@ -492,7 +496,7 @@ var G;
 		loadLevel : function(levelNum)
 		{
 			//PS.debug("Starting to load new level\n");
-			G.fallingImmute = true;
+			G.fallingImmune = true;
 			G.currentLevel = G.levels[levelNum];
 			var level = G.currentLevel;
 			//load the wall sprites
@@ -530,12 +534,15 @@ var G;
 			});
 			//move the player
 			//PS.debug("moving player sprite to new start\n");
-			PS.spriteMove(G.playerSpr, level.xStart, level.yStart);
+			var playerPos = PS.spriteMove(G.playerSpr, level.xStart, level.yStart);
+			//var playerPos = PS.spriteMove(G.playerSpr);
+			PS.borderColor(playerPos.x, playerPos.y, PS.COLOR_BLACK);
+			PS.border(playerPos.x, playerPos.y, G.playerBorder);
 			//draw the goal
 			PS.gridPlane(G.PLANE.GOAL);
 			PS.border(level.xGoal, level.yGoal, 4);
 			PS.borderColor(level.xGoal, level.xGoal, G.GRAY);
-			G.fallingImmute = false;
+			G.fallingImmune = false;
 		},
 
 		cleanupLevel : function(){
@@ -556,25 +563,32 @@ var G;
 			G.currentLevelNum++;
 			G.loadLevel(G.currentLevelNum);
 			G.turnLightsOff();
+			G.levelComplete = false;
 		},
 
 		movePlayer : function(direction){
 			var pos = PS.spriteMove(G.playerSpr);
 			var x = pos.x;
 			var y = pos.y;
+			var newX = x;
+			var newY = y;
+			//clean up old boarder
 			if        (direction == "right"){
-				x++;
+				newX = x+1;
 			} else if (direction == "up"){
-				y--;
+				newY = y-1;
 			} else if (direction == "left"){
-				x--;
+				newX = x-1;
 			} else if (direction == "down"){
-				y++;
+				newY = y+1;
 			}
-			if(!G.isWallAt(x, y) && !G.fallIntoPit) {
-				PS.spriteMove(G.playerSpr, x, y);
+			if(!G.isWallAt(newX, newY) && !G.fallIntoPit) {
+				PS.spriteMove(G.playerSpr, newX, newY);
+				PS.border(newX, newY, G.playerBorder);
+				PS.border(x, y, 0);
+				PS.borderColor(newX, newY, (G.lightsOn && !G.isPitAt(newX, newY) ? PS.COLOR_WHITE : PS.COLOR_BLACK));
 				G.recentPlayerMoves.push(
-					{pos : {x : x, y : y},
+					{pos : {x : newX, y : newY},
 						tick : PS.elapsed()});
 			}
 		},
@@ -638,6 +652,10 @@ var G;
 		resetLevel : function(){
 			PS.spriteMove(G.playerSpr, G.currentLevel.xStart, G.currentLevel.yStart);
 			PS.spriteShow(G.playerSpr, true);
+			PS.border(G.currentLevel.xStart, G.currentLevel.yStart, G.playerBorder);
+			PS.borderColor(G.currentLevel.xStart, G.currentLevel.yStart, (G.lightsOn ? PS.COLOR_WHITE : PS.COLOR_BLACK));
+			PS.border(G.currentLevel.xGoal, G.currentLevel.yGoal, 4);
+			PS.borderColor(G.currentLevel.xGoal, G.currentLevel.yGoal, G.GRAY);
 			G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 		},
 
@@ -655,6 +673,8 @@ var G;
 			G.lightsOn = true;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
 			PS.gridColor(PS.COLOR_WHITE);
+			var pos = PS.spriteMove(G.playerSpr);
+			PS.borderColor(pos.x, pos.y, PS.COLOR_WHITE);
 			//PS.debug("Turned lights on : "+PS.elapsed()+"\n");
 		},
 
@@ -669,6 +689,8 @@ var G;
 			G.shockLightsOn = false;
 			PS.color(PS.ALL, PS.ALL, PS.COLOR_BLACK);
 			PS.gridColor(PS.COLOR_BLACK);
+			var pos = PS.spriteMove(G.playerSpr);
+			PS.borderColor(pos.x, pos.y, PS.COLOR_BLACK);
 			G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 			//PS.debug("Turned lights off: "+PS.elapsed()+"\n");
 		},
@@ -729,8 +751,27 @@ var G;
 			G.turnLightsOnIn(G.flickerLightsOffFlickerPeriodOff);
 		},
 
+		disableLightSwitchFlags : function(){
+			G.waitToTurnLightsOff = false;
+			G.waitToTurnLightsOn = false;
+			G.flickerLightsOffFlag = false;
+			G.flickerLightsOnFlag = false;
+			G.flickerLightsOffDelayFlag = false;
+			G.flickerLightsOnDelayFlag = false;
+			G.shockLightsOn = false;
+		},
+
+		onGameOver : function(){
+			G.disableLightSwitchFlags();
+			G.turnLightsOff();
+			G.playLevelCompleteSound();
+			PS.statusText("END");
+			PS.statusColor(PS.COLOR_RED);
+			G.gameComplete = true;
+		},
+
 		collideWithPit : function(s1, p1, s2, p2, type){
-			if(!G.fallingImmute && type == PS.SPRITE_OVERLAP) {
+			if(!G.fallingImmune && type == PS.SPRITE_OVERLAP) {
 				G.fallIntoPit = true;
 				G.playFellIntoAPitSound();
 				G.flickerLightsOffFlag = false;
@@ -780,13 +821,25 @@ var G;
 			return 23.091*Math.log(0.75*activity+1);
 		},
 
+		//waitToLoadNextlevelFlag : false,
+		//waitToLoadNextLevelTime : 0,
+
 		update : function(){
 			G.updateLightSwitch();
 			G.updateFallIntoPit();
+
+			PS.borderColor(G.currentLevel.xGoal, G.currentLevel.yGoal, G.GRAY);
+
 			//if(PS.elapsed() % 4 == 0){
 			//	PS.debug("Tick: "+PS.elapsed()+" Activity: "+G.getPlayerActivityLevel().toFixed(2)+"\n");
 			//	//PS.debug("Tick: "+PS.elapsed()+" Running: "+G.isPlayerRunning()+"\n");
 			//}
+
+			//if(G.waitToLoadNextlevelFlag && (PS.elapsed() >= G.waitToLoadNextLevelTime)){
+			//	G.waitToLoadNextlevelFlag = false;
+			//	G.loadNextLevel();
+			//}
+
 		},
 
 		timeToTurnLightsOff : 0,
@@ -862,7 +915,7 @@ var G;
 			//update chance lights will turn on randomly
 			G.percentChanceLightsMayTurnOnRandomly = G.getPlayerActivityLevel();
 			//turn lights on randomly
-			if(PS.elapsed() >= G.timeNextTimeLightsMightTurnOn){
+			if(!G.levelComplete && (PS.elapsed() >= G.timeNextTimeLightsMightTurnOn)){
 				G.timeNextTimeLightsMightTurnOn = PS.elapsed() + G.lightsMightTurnOnPeriod;
 				if(!G.lightsOn && !G.flickerLightsOffFlag && !G.flickerLightsOnFlag && PS.random(100) <= G.percentChanceLightsMayTurnOnRandomly){
 					//PS.debug("Randomly turning on lights\n");
@@ -875,7 +928,7 @@ var G;
 		},
 
 		fallIntoPit : false,
-		fallingImmute : false,
+		fallingImmune : false,
 		pitBorder : 0,
 		pitBorderMax : 12,
 		pitFallPeriod : 100,
@@ -885,12 +938,13 @@ var G;
 			//fall into a pit
 			if(G.fallIntoPit && (PS.elapsed() - G.lastPitFall > G.pitFallPeriod)){
 				var pos = PS.spriteMove(G.playerSpr);
-				PS.border(pos.x, pos.y, ++G.pitBorder);
+				G.pitBorder += 1;
+				PS.border(pos.x, pos.y, G.pitBorder);
 				PS.borderColor(pos.x, pos.y, PS.COLOR_BLACK);
 				G.lastPitFall = PS.elapsed();
 				if(G.pitBorder >= G.pitBorderMax){
 					G.fallIntoPit = false;
-					G.pitBorder = 0;
+					G.pitBorder = G.playerBorder;
 					//PS.debug("finished falling into pit\n")
 					G.turnLightsOff();
 					G.resetLevel();
@@ -901,7 +955,7 @@ var G;
 
 		//sounds
 		soundShock : "perc_cymbal_crash1",
-		soundFellIntoAPit : "perc_cymbal_crash4",
+		soundFellIntoAPit : "perc_cymbal_crash2",
 		soundFlickerOn : "perc_drum_tom1",
 		soundFlickerOff : "perc_drum_tom2",
 		soundLevelComplete : "perc_triangle",
@@ -922,9 +976,11 @@ var G;
 			PS.audioPlay(G.soundFellIntoAPit);
 		},
 
-		playLevelCompleteSound : function(){
-			PS.audioPlay(G.soundLevelComplete);
+		playLevelCompleteSound : function(onEndFunc){
+			PS.audioPlay(G.soundLevelComplete, {onEnd : onEndFunc});
 		}
+
+
 
 	};
 }());
@@ -942,6 +998,8 @@ PS.init = function( system, options ) {
 	PS.gridSize(G.width, G.height);
 
 	PS.statusText("");
+
+	G.pitBorder = G.playerBorder;
 
 	PS.border(PS.ALL, PS.ALL, 0);
 	PS.gridPlane(G.PLANE.FLOOR);
@@ -1069,7 +1127,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 
 	//PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
 
-	if(G.gameComplete){
+	if(G.gameComplete || G.levelComplete){
 		return;
 	}
 
@@ -1116,29 +1174,32 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 
 	G.movePlayer(direction);
 	if(G.isLevelComplete()){
+		//if final level
 		if(G.currentLevelNum == G.levels.length - 1) {
 			G.cleanupLevel();
-			PS.statusText("END");
-			PS.statusColor(PS.COLOR_RED);
-			G.gameComplete = true;
-			G.waitToTurnLightsOff = false;
-			G.waitToTurnLightsOn = false;
-			G.flickerLightsOffFlag = false;
-			G.flickerLightsOnFlag = false;
-			G.flickerLightsOffDelayFlag = false;
-			G.flickerLightsOnDelayFlag = false;
+			G.onGameOver();
+		//load next level
+		} else {
+			G.disableLightSwitchFlags();
 			G.turnLightsOff();
 			G.playLevelCompleteSound();
-		}else{
-			G.waitToTurnLightsOff = false;
-			G.waitToTurnLightsOn = false;
-			G.flickerLightsOffFlag = false;
-			G.flickerLightsOnFlag = false;
-			G.flickerLightsOffDelayFlag = false;
-			G.flickerLightsOnDelayFlag = false;
-			G.turnLightsOff();
-			G.loadNextLevel();
-			G.playLevelCompleteSound();
+			G.levelComplete = true;
+
+			//PS.gridPlane(G.PLANE.TOP);
+			//PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_OPAQUE);
+			//PS.color(PS.ALL, PS.ALL, PS.COLOR_WHITE);
+			//PS.border(G.currentLevel.xGoal, G.currentLevel.yGoal, 0);
+			//PS.gridColor(PS.COLOR_WHITE);
+
+			//G.loadNextLevel();
+			G.playLevelCompleteSound(function () {
+
+				PS.gridPlane(G.PLANE.TOP);
+				PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
+
+				G.turnLightsOff();
+				G.loadNextLevel();
+			});
 		}
 	}
 

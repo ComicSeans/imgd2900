@@ -642,10 +642,10 @@ var W; // global namespace variable
 				PS.color(PS.ALL, PS.ALL, PS.COLOR_GRAY);
 				PS.border(PS.ALL, PS.ALL, 0);
 
-				PS.statusColor(PS.COLOR_GRAY);
-				PS.statusText("Grow");
-				PS.statusFade(300);
-				PS.statusColor(PS.COLOR_WHITE);
+				//PS.statusColor(PS.COLOR_GRAY);
+				//PS.statusText("");
+				//PS.statusFade(300);
+				//PS.statusColor(PS.COLOR_WHITE);
 
 
 				return;
@@ -786,6 +786,21 @@ PS.init = function( system, options )
 	PS.statusColor( PS.COLOR_WHITE );
 	PS.audioLoad( "whither" );
 	W.init();
+
+	//var title1 = "Whither";
+	//var makeTitle = function(space){
+	//	var title = "";
+	//	for(var i = 0; i < title1.length - 1; i++){
+	//		title = title + title1[i];
+	//		for(var j = 0; j < space; j++){
+	//			title = title + " ";
+	//		}
+	//	}
+	//	title = title + title1[title1.length - 1];
+	//	return title;
+	//};
+	//PS.debug(makeTitle(3));
+
 };
 
 PS.keyDown = function( key, shift, ctrl, options )
@@ -831,6 +846,20 @@ PS.keyDown = function( key, shift, ctrl, options )
 	}
 
 	else if (W.end){
+
+		var title1 = "Whither";
+		var makeTitle = function(space){
+			var title = "";
+			for(var i = 0; i < title1.length - 1; i++){
+				title = title + title1[i];
+				for(var j = 0; j < space; j++){
+					title = title + "_";
+				}
+			}
+			title = title + title1[title1.length - 1];
+			return title;
+		};
+
 		PS.gridPlane(0);
 		PS.color( 9, 7, PS.COLOR_GRAY );
 		PS.alpha( 9, 7, PS.ALPHA_OPAQUE );
@@ -839,6 +868,10 @@ PS.keyDown = function( key, shift, ctrl, options )
 		var out = function(x, y)
 		{
 			return (x < 0) || (x > 9) || (y < 0) || (y > 9);
+		};
+
+		var map = function (x, in_min, in_max, out_min, out_max) {
+			return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 		};
 
 		var down = (key == 1008) || (key == 115);
@@ -898,6 +931,9 @@ PS.keyDown = function( key, shift, ctrl, options )
 			PS.alpha(PS.ALL, PS.ALL, PS.ALPHA_TRANSPARENT);
 			W.end2 = true;
 
+			PS.statusFade(300);
+			PS.statusColor(PS.COLOR_GRAY);
+
 			PS.statusColor(PS.COLOR_GRAY);
 
 			return;
@@ -905,7 +941,11 @@ PS.keyDown = function( key, shift, ctrl, options )
 		if(W.end2){
 			return;
 		}
-
+		PS.statusFade(15);
+		var cVal = map(W.plrh, 1, 10, 255, 149);
+		PS.statusColor([cVal, cVal, cVal]);
+		//PS.statusText(makeTitle(W.plrh));
+		//PS.debug(makeTitle(W.plrh) + "\n");
 
 		W.plrspr = PS.spriteSolid(W.plrw, W.plrh);
 		PS.spritePlane(W.plrspr, 2);
